@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Link-Lab | Choose Favorites</title>
+<style>
+    * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { display:flex; justify-content:center; align-items:center; min-height:100vh; background:#f5f7fa; }
+    .container { background:white; padding:2rem; border-radius:10px; box-shadow:0 10px 30px rgba(0,0,0,0.1); width:100%; max-width:500px; }
+    h2 { text-align:center; margin-bottom:1.5rem; color:#2c3e50; }
+    .form-group { margin-bottom:1rem; }
+    label { display:block; margin-bottom:0.3rem; font-weight:500; color:#2c3e50; }
+    select { width:100%; padding:10px; border:1px solid #ddd; border-radius:5px; }
+    .btn { width:100%; padding:12px; background:#3498db; color:white; border:none; border-radius:5px; font-size:1rem; font-weight:600; cursor:pointer; margin-top:1rem; }
+    .btn:hover { background:#2980b9; }
+</style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Choose Your Favorite Categories</h2>
+    <form id="favoritesForm">
+        <div class="form-group">
+            <label for="movies">Favorite Movie Genre</label>
+            <select id="movies" required>
+                <option value="">--Select--</option>
+                <option value="Action">Action</option>
+                <option value="Comedy">Comedy</option>
+                <option value="Drama">Drama</option>
+                <option value="Horror">Horror</option>
+                <option value="Romance">Romance</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="shopping">Favorite Shopping Category</label>
+            <select id="shopping" required>
+                <option value="">--Select--</option>
+                <option value="Electronics">Electronics</option>
+                <option value="Clothing">Clothing</option>
+                <option value="Books">Books</option>
+                <option value="Home & Kitchen">Home & Kitchen</option>
+                <option value="Sports">Sports</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="jobs">Favorite Job Sector</label>
+            <select id="jobs" required>
+                <option value="">--Select--</option>
+                <option value="IT">IT</option>
+                <option value="Healthcare">Healthcare</option>
+                <option value="Finance">Finance</option>
+                <option value="Education">Education</option>
+                <option value="Marketing">Marketing</option>
+            </select>
+        </div>
+
+        <button type="submit" class="btn">Save Preferences</button>
+    </form>
+</div>
+
+<script>
+    // Get the currently signed-in user from cookie
+    function getSignedInUser() {
+        const name = document.cookie.split('; ').find(row => row.startsWith('signedInUser='));
+        return name ? decodeURIComponent(name.split('=')[1]) : null;
+    }
+
+    const currentUser = getSignedInUser();
+    if(!currentUser){
+        alert("No user signed in!");
+        window.location.href = "login.html";
+    }
+
+    const users = JSON.parse(localStorage.getItem("users")) || [];
+
+    document.getElementById('favoritesForm').addEventListener('submit', function(e){
+        e.preventDefault();
+
+        const movies = document.getElementById('movies').value;
+        const shopping = document.getElementById('shopping').value;
+        const jobs = document.getElementById('jobs').value;
+
+        // Update user's preferences
+        const userIndex = users.findIndex(u => u.username === currentUser);
+        if(userIndex !== -1){
+            users[userIndex].preferences = {
+                movies,
+                shopping,
+                jobs
+            };
+            localStorage.setItem("users", JSON.stringify(users));
+            alert("Preferences saved successfully!");
+            // Redirect to homepage or dashboard
+            window.location.href = "../index.html";
+        } else {
+            alert("User not found!");
+        }
+    });
+</script>
+
+</body>
+</html>

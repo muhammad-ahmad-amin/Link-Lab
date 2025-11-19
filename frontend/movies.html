@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Link Lab</title>
+<style>
+  body {
+    margin:0;
+    font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color:#111;
+    color:white;
+  }
+
+  /* Navbar */
+  .navbar {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:1rem 2rem;
+    background-color:#141414;
+    position:sticky;
+    top:0;
+    z-index:100;
+    box-shadow:0 2px 10px rgba(0,0,0,0.7);
+  }
+  .navbar h2 {
+    margin:0;
+    font-size:1.7rem;
+    color:#e50914;
+    letter-spacing:1px;
+  }
+  .nav-links {
+    display:flex;
+    align-items:center;
+    gap:1rem;
+  }
+  .nav-links button, .nav-links select, #searchInput {
+    background-color:#333;
+    color:white;
+    border:none;
+    padding:0.5rem 1rem;
+    border-radius:5px;
+    cursor:pointer;
+    font-size:0.9rem;
+    transition:background 0.3s, transform 0.2s;
+  }
+  .nav-links button:hover, .nav-links select:hover, #searchInput:focus {
+    background-color:#555;
+    transform:scale(1.05);
+    outline:none;
+  }
+  #searchInput {
+    width:200px;
+  }
+
+  /* Prominent Recommendations button */
+  #recommendBtn {
+    background-color: #e50914;
+    color: white;
+    font-weight: bold;
+    font-size: 1rem;
+    padding: 0.6rem 1.2rem;
+    border-radius: 8px;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  #recommendBtn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+    background-color: #f6121d;
+  }
+
+  /* Movies grid */
+  .movies-grid {
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
+    gap:1rem;
+    padding:1rem;
+    max-width:1200px;
+    margin:1rem auto;
+  }
+  .movie-card {
+    cursor:pointer;
+    position:relative;
+    overflow:hidden;
+    border-radius:10px;
+    transition:transform 0.3s, box-shadow 0.3s;
+  }
+  .movie-card img {
+    width:100%;
+    display:block;
+    border-radius:10px;
+    object-fit:cover;
+  }
+  .movie-card:hover {
+    transform:scale(1.08);
+    box-shadow:0 10px 20px rgba(0,0,0,0.7);
+  }
+  .movie-title {
+    position:absolute;
+    bottom:0;
+    width:100%;
+    text-align:center;
+    background:rgba(0,0,0,0.7);
+    padding:0.4rem;
+    font-weight:bold;
+    font-size:0.9rem;
+    letter-spacing:0.5px;
+  }
+  
+</style>
+</head>
+<body>
+
+<div class="navbar">
+  <h2>Link Lab</h2>
+  <div class="nav-links">
+    <button id="recommendBtn">Recommendations</button>
+    <button onclick="loadMovies('popular')">Popular</button>
+    <button onclick="loadMovies('top_rated')">Top Rated</button>
+    <button onclick="loadMovies('now_playing')">Latest</button>
+    <button id="watchlistBtn">Watchlist</button> <!-- New Watchlist button -->
+    <select id="genreSelect" onchange="loadGenreMovies(this.value)">
+      <option value="">Select Genre</option>
+    </select>
+    <input type="text" id="searchInput" placeholder="Search movies..." oninput="filterMovies()"/>
+  </div>
+</div>
+
+<div class="movies-grid" id="moviesGrid"></div>
+
+<script>
+const apiKey = '8b3f92d668511fcfa25cb8b8681becc8';
+const imageBase = 'https://image.tmdb.org/t/p/w500';
+let allMovies = []; // store current movies
+
+// Fetch genre list
+async function fetchGenres(){
+  const res = await fetch(`https://api.themoviedb.org/3/genre/movie/list?api_key=${apiKey}&language=en-US`);
+  const data = await res.json();
+  const genreSelect = document.getElementById('genreSelect');
+  data.genres.forEach(genre => {
+    const option = document.createElement('option');
+    option.value = genre.id;
+    option.textContent = genre.name;
+    genreSelect.appendChild(option);
+  });
+}
+
+// Fetch movies by category
+async function loadMovies(category){
+  const movies=[];
+  for(let page=1; page<=3; page++){
+    const res = await fetch(`https://api.themoviedb.org/3/movie/${category}?api_key=${apiKey}&language=en-US&page=${page}`);
+    const data = await res.json();
+    movies.push(...data.results);
+    if(movies.length>=50) break;
+  }
+  allMovies = movies.slice(0,50);
+  displayMovies(allMovies);
+}
+
+// Fetch movies by genre
+async function loadGenreMovies(genreId){
+  if(!genreId) return;
+  const movies=[];
+  for(let page=1; page<=3; page++){
+    const res = await fetch(`https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&with_genres=${genreId}&page=${page}`);
+    const data = await res.json();
+    movies.push(...data.results);
+    if(movies.length>=50) break;
+  }
+  allMovies = movies.slice(0,50);
+  displayMovies(allMovies);
+}
+
+// Display movies
+function displayMovies(movies){
+  const grid = document.getElementById('moviesGrid');
+  grid.innerHTML=''; 
+  movies.forEach(movie=>{
+    const card = document.createElement('div');
+    card.className='movie-card';
+    card.innerHTML=`<img src="${movie.poster_path?imageBase+movie.poster_path:''}" alt="${movie.title}"><div class="movie-title">${movie.title}</div>`;
+    card.addEventListener('click',()=> {
+      window.location.href=`movie.html?id=${movie.id}`;
+    });
+    grid.appendChild(card);
+  });
+}
+
+// Search/filter function
+function filterMovies(){
+  const query = document.getElementById('searchInput').value.toLowerCase();
+  const filtered = allMovies.filter(movie => movie.title.toLowerCase().includes(query));
+  displayMovies(filtered);
+}
+
+// Recommendations button placeholder
+document.getElementById('recommendBtn').addEventListener('click', () => {
+  alert('Recommendations feature coming soon!');
+});
+
+// Watchlist button logic
+document.getElementById('watchlistBtn').addEventListener('click', () => {
+  const watchlist = JSON.parse(localStorage.getItem('watchlist') || '[]');
+  if(watchlist.length === 0){
+    alert('Your watchlist is empty. Add movies to your list!');
+  } else {
+    // Display only watchlist movies
+    allMovies = watchlist;
+    displayMovies(allMovies);
+  }
+});
+
+// Initialize
+fetchGenres();
+loadMovies('popular');
+</script>
+
+</body>
+</html>
