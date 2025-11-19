@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Link-Lab | Home</title>
+    <script>
+        // Function to read a specific cookie by name
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+            return null;
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const signedInUser = getCookie('signedInUser');
+
+            if (signedInUser) {
+                // User is signed in → go to main.html
+                window.location.href = 'frontend/main.html';
+            } else {
+                // User not signed in → go to login.html
+                window.location.href = 'frontend/login.html';
+            }
+        });
+    </script>
+</head>
+<body>
+    <p>Redirecting...</p>
+</body>
+</html>

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Link-Lab | Login</title>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { display:flex; justify-content:center; align-items:center; min-height:100vh; background-color:#f5f7fa; }
+        .login-container { background:white; padding:2rem; border-radius:10px; box-shadow:0 10px 30px rgba(0,0,0,0.1); width:100%; max-width:400px; }
+        h2 { text-align:center; margin-bottom:1.5rem; color:#2c3e50; }
+        .form-group { margin-bottom:1.2rem; }
+        .form-group label { display:block; margin-bottom:0.5rem; font-weight:500; color:#2c3e50; }
+        .form-group input { width:100%; padding:10px; border:1px solid #ddd; border-radius:5px; }
+        .btn { width:100%; padding:12px; background:#3498db; color:white; border:none; border-radius:5px; font-size:1rem; font-weight:600; cursor:pointer; }
+        .btn:hover { background:#2980b9; }
+        .signup-link { text-align:center; margin-top:1rem; font-size:0.9rem; }
+        .signup-link a { color:#3498db; text-decoration:none; font-weight:500; }
+        .signup-link a:hover { text-decoration:underline; }
+    </style>
+</head>
+<body>
+
+<div class="login-container">
+    <h2>Login to Link-Lab</h2>
+    <form id="loginForm">
+        <div class="form-group">
+            <label for="loginEmail">Email or Username</label>
+            <input type="text" id="loginEmail" required>
+        </div>
+        <div class="form-group">
+            <label for="loginPassword">Password</label>
+            <input type="password" id="loginPassword" required>
+        </div>
+        <button type="submit" class="btn">Login</button>
+    </form>
+    <div class="signup-link">
+        Don't have an account? <a href="signup.html">Sign up</a>
+    </div>
+</div>
+
+<script>
+    document.getElementById('loginForm').addEventListener('submit', function(e){
+        e.preventDefault();
+
+        const loginValue = document.getElementById('loginEmail').value.trim();
+        const password = document.getElementById('loginPassword').value;
+
+        // Load users from localStorage
+        const users = JSON.parse(localStorage.getItem("users")) || [];
+
+        // Check for matching user
+        const user = users.find(u => (u.email === loginValue || u.username === loginValue) && u.password === password);
+
+        if(user){
+        alert("Login successful!");
+
+        // Optionally, save lastLogin
+        user.lastLogin = new Date().toISOString();
+        localStorage.setItem("users", JSON.stringify(users));
+
+        // Set a cookie for the signed-in user (expires in 7 days)
+        document.cookie = `signedInUser=${encodeURIComponent(user.username)}; path=/; max-age=${7*24*60*60}`;
+
+        // Redirect to index.html
+        window.location.href = "../index.html";
+        } else {
+            alert("Invalid email/username or password!");
+        }
+
+    });
+</script>
+
+</body>
+</html>
