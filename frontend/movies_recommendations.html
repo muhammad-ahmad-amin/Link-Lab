@@ -437,7 +437,7 @@
 
             // Fetch popular movies
             let movies = [];
-            for (let page = 1; page <= 10; page++) {
+            for (let page = 1; page <= 15; page++) {
                 const res = await fetch(`https://api.themoviedb.org/3/movie/popular?api_key=${apiKey}&language=en-US&page=${page}`);
                 const data = await res.json();
                 movies = movies.concat(data.results);
@@ -555,14 +555,13 @@
            simulation = d3.forceSimulation(nodes)
     .force("link", d3.forceLink(links)
         .id(d => d.id)
-        .distance(d => 120 + d.weight * 1000)
+        .distance(d => 120 + d.weight * 20)
     )
     .force("charge", d3.forceManyBody().strength(-3000))
     .force("center", d3.forceCenter(width / 2, height / 2))
     .force("collision", d3.forceCollide().radius(25))
 
     .alpha(1)            // start fully energized
-    .alphaDecay(0)       // <— keeps simulation running FOREVER
     .velocityDecay(0.25) // <— optional resistance (lower = more motion)
 
     .on("tick", ticked);
@@ -588,7 +587,7 @@ svg.call(
     zoom.transform,
     d3.zoomIdentity
         .translate(width / 2, height / 2) // center the graph
-        .scale(0.2)                       // zoom out to 40%
+        .scale(0.4)                       // zoom out to 40%
 );
         }
 
