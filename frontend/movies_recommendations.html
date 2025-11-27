@@ -500,95 +500,93 @@
             const width = container.clientWidth;
             const height = container.clientHeight;
 
-            // Remove existing elements
+            // Remove old elements
             g.selectAll(".links line").remove();
             g.selectAll(".nodes circle").remove();
             g.selectAll(".nodes text").remove();
 
-            // Draw links
+            // Links
             const link = g.select(".links")
-    .selectAll("line")
-    .data(links)
-    .enter()
-    .append("line")
-    .attr("stroke", "rgba(255,255,255,1)")
-    .attr("stroke-width", 3)   // <– BOLDER
-    .attr("stroke-opacity", 1);
+                .selectAll("line")
+                .data(links, d => d.id || `${d.source}-${d.target}`)
+                .enter()
+                .append("line")
+                .attr("stroke", "rgba(255,255,255,1)")
+                .attr("stroke-width", 3)
+                .attr("stroke-opacity", 1);
 
-
-            // Draw nodes
+            // Nodes
             const node = g.select(".nodes")
-    .selectAll("circle")
-    .data(nodes)
-    .enter()
-    .append("circle")
-    .attr("r", 20)     // same bigger size for ALL nodes
-    .attr("fill", d => d.recommended ? "#FFD700" : colorScale(d.type))
-    .attr("stroke", "#fff")
-    .attr("stroke-width", 3)
-    .call(d3.drag()
-        .on("start", dragStarted)
-        .on("drag", dragged)
-        .on("end", dragEnded))
-    .on("click", function (event, d) {
-        showNodeInfo(d);
-    });
+                .selectAll("circle")
+                .data(nodes, d => d.id)
+                .enter()
+                .append("circle")
+                .attr("r", 20)
+                .attr("fill", d => d.recommended ? "#FFD700" : colorScale(d.type))
+                .attr("stroke", "#fff")
+                .attr("stroke-width", 3)
+                .call(
+                    d3.drag()
+                        .on("start", dragStarted)
+                        .on("drag", dragged)
+                        .on("end", dragEnded)
+                )
+                .on("click", function (event, d) {
+                    showNodeInfo(d);
+                });
 
-            // Add labels to nodes
+            // Labels
             const label = g.select(".nodes")
                 .selectAll("text")
-                .data(nodes)
+                .data(nodes, d => d.id)
                 .enter()
                 .append("text")
                 .text(d => d.name)
-                .attr("font-size", d => {
-                    if (d.type === "primary") return "14px";
-                    if (d.type === "secondary") return "12px";
-                    return "10px";
-                })
+                .attr("font-size", d =>
+                    d.type === "primary" ? "14px" :
+                        d.type === "secondary" ? "12px" : "10px"
+                )
                 .attr("dx", 15)
                 .attr("dy", 4)
-                .attr("fill", "white")
-                .attr("text-shadow", "1px 1px 2px black");
+                .attr("fill", "white");
 
-            // Initialize force simulation
-           simulation = d3.forceSimulation(nodes)
-    .force("link", d3.forceLink(links)
-        .id(d => d.id)
-        .distance(d => 120 + d.weight * 20)
-    )
-    .force("charge", d3.forceManyBody().strength(-3000))
-    .force("center", d3.forceCenter(width / 2, height / 2))
-    .force("collision", d3.forceCollide().radius(25))
-
-    .alpha(1)            // start fully energized
-    .velocityDecay(0.25) // <— optional resistance (lower = more motion)
-
-    .on("tick", ticked);
+            // Force Simulation
+            simulation = d3.forceSimulation(nodes)
+                .force("link", d3.forceLink(links)
+                    .id(d => d.id)
+                    .distance(l => 150 + (l.weight || 1) * 40)
+                )
+                .force("charge", d3.forceManyBody().strength(-3000))
+                .force("center", d3.forceCenter(width / 2, height / 2))
+                .force("collision", d3.forceCollide().radius(25))
+                .alpha(1)
+                .alphaDecay(0.03)
+                .velocityDecay(0.25)
+                .on("tick", ticked);
 
             function ticked() {
+
                 link
-                    .attr("x1", d => d.source.x)
-                    .attr("y1", d => d.source.y)
-                    .attr("x2", d => d.target.x)
-                    .attr("y2", d => d.target.y);
+                    .attr("x1", d => d.source.x ?? 0)
+                    .attr("y1", d => d.source.y ?? 0)
+                    .attr("x2", d => d.target.x ?? 0)
+                    .attr("y2", d => d.target.y ?? 0);
 
                 node
-                    .attr("cx", d => d.x)
-                    .attr("cy", d => d.y);
+                    .attr("cx", d => d.x ?? 0)
+                    .attr("cy", d => d.y ?? 0);
 
                 label
-                    .attr("x", d => d.x)
-                    .attr("y", d => d.y);
+                    .attr("x", d => (d.x ?? 0) + 15)
+                    .attr("y", d => d.y ?? 0);
             }
 
-            // After simulation is initialized
-svg.call(
-    zoom.transform,
-    d3.zoomIdentity
-        .translate(width / 2, height / 2) // center the graph
-        .scale(0.4)                       // zoom out to 40%
-);
+            svg.call(
+                zoom.transform,
+                d3.zoomIdentity
+                    .translate(width / 2, height / 2)
+                    .scale(0.4)
+            );
         }
 
         // Drag functions for node interaction
