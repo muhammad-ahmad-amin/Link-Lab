@@ -325,8 +325,8 @@
 
             // Highlight links connected to recommended movies
             links.forEach(link => {
-                const sourceId = link.source.id || link.source;
-                const targetId = link.target.id || link.target;
+                const sourceId = typeof link.source === "object" ? link.source.id : link.source;
+                const targetId = typeof link.target === "object" ? link.target.id : link.target;
                 if (recommendedMovieIds.includes(sourceId.replace("movie-", "")) ||
                     recommendedMovieIds.includes(targetId.replace("movie-", ""))) {
                     link.highlight = true;
@@ -376,7 +376,7 @@
             await buildGraph();
 
             const recommendedIds = recommendedMovies.map(m => m.id.toString());
-            highlightRecommendedLinks(recommendedIds); // <-- now it will work
+            setTimeout(() => highlightRecommendedLinks(recommendedIds), 300);
         }
 
         loadRecommendedMovies();
@@ -419,8 +419,6 @@
                 });
 
             svg.call(zoom);
-
-            buildGraph();
         }
 
         // Color scale for node types
@@ -567,18 +565,18 @@
             function ticked() {
 
                 link
-                    .attr("x1", d => d.source.x ?? 0)
-                    .attr("y1", d => d.source.y ?? 0)
-                    .attr("x2", d => d.target.x ?? 0)
-                    .attr("y2", d => d.target.y ?? 0);
+        .attr("x1", d => Number.isFinite(d.source.x) ? d.source.x : 0)
+        .attr("y1", d => Number.isFinite(d.source.y) ? d.source.y : 0)
+        .attr("x2", d => Number.isFinite(d.target.x) ? d.target.x : 0)
+        .attr("y2", d => Number.isFinite(d.target.y) ? d.target.y : 0);
 
-                node
-                    .attr("cx", d => d.x ?? 0)
-                    .attr("cy", d => d.y ?? 0);
+    node
+        .attr("cx", d => Number.isFinite(d.x) ? d.x : 0)
+        .attr("cy", d => Number.isFinite(d.y) ? d.y : 0);
 
-                label
-                    .attr("x", d => (d.x ?? 0) + 15)
-                    .attr("y", d => d.y ?? 0);
+    label
+        .attr("x", d => Number.isFinite(d.x) ? d.x + 15 : 15)
+        .attr("y", d => Number.isFinite(d.y) ? d.y : 0);
             }
 
             svg.call(
