@@ -146,17 +146,23 @@ function checkListStatus(){
 // Add to watchlist
 document.getElementById('addToListBtn').addEventListener('click', () => {
   let watchlist = JSON.parse(localStorage.getItem('watchlist') || '[]');
+
   if(!watchlist.some(m => m.id === currentMovie.id)){
+
     watchlist.push({
       id: currentMovie.id,
       title: currentMovie.title,
-      poster_path: currentMovie.poster_path
+      poster_path: currentMovie.poster_path,
+      genres: currentMovie.genres ? currentMovie.genres.map(g => g.name) : []
     });
+
     localStorage.setItem('watchlist', JSON.stringify(watchlist));
+
     const btn = document.getElementById('addToListBtn');
     btn.textContent = 'Added';
     btn.disabled = true;
     btn.style.backgroundColor = 'rgba(50,50,50,0.7)';
+
     alert('Added to your list!');
   }
 });

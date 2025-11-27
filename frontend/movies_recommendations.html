@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Graph-Based Movie Recommendation System</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .content {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .panel {
+            flex: 1;
+            min-width: 300px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .panel-title {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        #graph-container {
+            height: 500px;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .user-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .user-select {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        select,
+        button {
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: none;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        select {
+            flex: 1;
+        }
+
+        button {
+            background: #4CAF50;
+            color: white;
+        }
+
+        button:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .recommendations {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .movie-card {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .movie-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.25);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .movie-poster {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .movie-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .movie-rating {
+            color: #FFD700;
+            font-size: 0.9rem;
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.9rem;
+        }
+
+        .legend-color {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+        }
+
+        .node-info {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+        }
+
+        .algorithm-info {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            margin: 15px 0;
+            overflow: hidden;
+        }
+
+        .progress {
+            height: 100%;
+            background: #4CAF50;
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+
+        .highlight {
+            color: #FFD700;
+            font-weight: bold;
+        }
+
+        .graph-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .graph-btn {
+            background: #2196F3;
+            padding: 8px 12px;
+            font-size: 0.9rem;
+        }
+
+        .spinner {
+            border: 6px solid rgba(255, 255, 255, 0.3);
+            border-top: 6px solid #fff;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            margin: 0 auto;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>Graph-Based Movie Recommendation System</h1>
+            <p class="subtitle">Explore how graph algorithms work to provide personalized movie recommendations based on
+                your genre preferences.</p>
+        </header>
+
+        <div class="content">
+            <div class="panel">
+                <h2 class="panel-title">Genre Preference Graph</h2>
+                <div id="graph-container"></div>
+                <div class="graph-controls">
+                    <button class="graph-btn" id="zoom-in">Zoom In</button>
+                    <button class="graph-btn" id="zoom-out">Zoom Out</button>
+                    <button class="graph-btn" id="reset-view">Reset View</button>
+                </div>
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: #4CAF50;"></div>
+                        <span>Primary Genre</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: #2196F3;"></div>
+                        <span>Secondary Genres</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: #FF9800;"></div>
+                        <span>Movies</span>
+                    </div>
+                </div>
+                <div class="node-info">
+                    <h3>Node Information</h3>
+                    <p>Click on any node to see details here.</p>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="user-controls">
+                </div>
+                <div id="loader" style="display:none; text-align:center; margin-top:20px;">
+                    <div class="spinner"></div>
+                    <p>Loading recommended movies...</p>
+                </div>
+
+                <h2 class="panel-title">Recommended Movies</h2>
+                <div class="recommendations" id="recommendations-container">
+                    <!-- Movie recommendations will appear here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function highlightRecommendedLinks(recommendedMovieIds) {
+            // Reset all nodes
+            nodes.forEach(n => n.recommended = false);
+            links.forEach(l => l.highlight = false);
+
+            // Mark recommended nodes
+            nodes.forEach(n => {
+                if (recommendedMovieIds.includes(n.id.replace("movie-", ""))) {
+                    n.recommended = true;
+                }
+            });
+
+            // Highlight links connected to recommended movies
+            links.forEach(link => {
+                const sourceId = link.source.id || link.source;
+                const targetId = link.target.id || link.target;
+                if (recommendedMovieIds.includes(sourceId.replace("movie-", "")) ||
+                    recommendedMovieIds.includes(targetId.replace("movie-", ""))) {
+                    link.highlight = true;
+                }
+            });
+
+            updateGraph();
+        }
+
+        async function loadRecommendedMovies() {
+            const loader = document.getElementById('loader');
+            loader.style.display = 'block'; // show loader
+
+            const apiKey = '8b3f92d668511fcfa25cb8b8681becc8';
+            const orderedGenres = JSON.parse(localStorage.getItem('orderedGenres') || '[]');
+
+            const genreList = await fetch(`https://api.themoviedb.org/3/genre/movie/list?api_key=${apiKey}&language=en-US`)
+                .then(res => res.json())
+                .then(data => data.genres);
+
+            const orderedGenreIds = orderedGenres.map(name => {
+                const g = genreList.find(gen => gen.name.toLowerCase() === name.toLowerCase());
+                return g ? g.id : null;
+            }).filter(id => id);
+
+            if (orderedGenreIds.length === 0) {
+                loader.style.display = 'none';
+                return;
+            }
+
+            let movies = [];
+            for (const genreId of orderedGenreIds) {
+                for (let page = 1; page <= 3; page++) {
+                    const res = await fetch(`https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&with_genres=${genreId}&sort_by=vote_average.desc&vote_count.gte=10&page=${page}`);
+                    const data = await res.json();
+                    movies = movies.concat(data.results);
+                }
+            }
+
+            const uniqueMovies = Array.from(new Map(movies.map(m => [m.id, m])).values());
+            const recommendedMovies = uniqueMovies.sort(() => Math.random() - 0.5).slice(0, 10);
+
+            displayRecommendations(recommendedMovies);
+            loader.style.display = 'none';
+
+            // Wait for the graph to be fully built before highlighting
+            await buildGraph();
+
+            const recommendedIds = recommendedMovies.map(m => m.id.toString());
+            highlightRecommendedLinks(recommendedIds); // <-- now it will work
+        }
+
+        loadRecommendedMovies();
+
+
+        // Initialize the graph
+        let nodes = [];
+        let links = [];
+        let simulation;
+        let zoom = d3.zoom();
+        let svg, g;
+
+        // Initialize the SVG and graph
+        function initGraph() {
+            const container = document.getElementById('graph-container');
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+
+            // Clear any existing SVG
+            d3.select("#graph-container svg").remove();
+
+            // Create SVG
+            svg = d3.select("#graph-container")
+                .append("svg")
+                .attr("width", width)
+                .attr("height", height);
+
+            // Create a group for zooming
+            g = svg.append("g");
+
+            // Create groups for links and nodes
+            const linkGroup = g.append("g").attr("class", "links");
+            const nodeGroup = g.append("g").attr("class", "nodes");
+
+            // Set up zoom behavior
+            zoom = d3.zoom()
+                .scaleExtent([0.1, 4])
+                .on("zoom", (event) => {
+                    g.attr("transform", event.transform);
+                });
+
+            svg.call(zoom);
+
+            buildGraph();
+        }
+
+        // Color scale for node types
+        const colorScale = d3.scaleOrdinal()
+            .domain(["primary", "secondary", "tertiary"])
+            .range(["#4CAF50", "#2196F3", "#FF9800"]);
+
+        // Build the graph with fewer connections
+        async function buildGraph() {
+            nodes = [];
+            links = [];
+
+            const apiKey = '8b3f92d668511fcfa25cb8b8681becc8';
+
+            // Fetch popular movies
+            let movies = [];
+            for (let page = 1; page <= 10; page++) {
+                const res = await fetch(`https://api.themoviedb.org/3/movie/popular?api_key=${apiKey}&language=en-US&page=${page}`);
+                const data = await res.json();
+                movies = movies.concat(data.results);
+            }
+
+            movies = Array.from(new Map(movies.map(m => [m.id, m])).values());
+            movies = movies.slice(0, 40); // limit nodes
+
+            // Create nodes
+            movies.forEach(movie => {
+                nodes.push({
+                    id: `movie-${movie.id}`,
+                    name: movie.title,
+                    type: "movie",
+                    genres: movie.genre_ids
+                });
+            });
+
+            // Limit connections per node
+            const MAX_LINKS = 6;
+            const linkCount = {}; // movieId → number of links
+
+            // Create reduced links
+            for (let i = 0; i < nodes.length; i++) {
+                for (let j = i + 1; j < nodes.length; j++) {
+
+                    const sharedGenres = nodes[i].genres.filter(g =>
+                        nodes[j].genres.includes(g)
+                    );
+
+                    // Require at least 2 shared genres (reduces noise)
+                    if (sharedGenres.length < 2) continue;
+
+                    const source = nodes[i].id;
+                    const target = nodes[j].id;
+
+                    linkCount[source] = linkCount[source] || 0;
+                    linkCount[target] = linkCount[target] || 0;
+
+                    // Enforce max 6 connections per node
+                    if (linkCount[source] < MAX_LINKS && linkCount[target] < MAX_LINKS) {
+                        links.push({
+                            source,
+                            target,
+                            weight: sharedGenres.length
+                        });
+
+                        linkCount[source]++;
+                        linkCount[target]++;
+                    }
+                }
+            }
+
+            updateGraph();
+            return true;
+        }
+
+        function updateGraph() {
+            const container = document.getElementById('graph-container');
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+
+            // Remove existing elements
+            g.selectAll(".links line").remove();
+            g.selectAll(".nodes circle").remove();
+            g.selectAll(".nodes text").remove();
+
+            // Draw links
+            const link = g.select(".links")
+    .selectAll("line")
+    .data(links)
+    .enter()
+    .append("line")
+    .attr("stroke", "rgba(255,255,255,1)")
+    .attr("stroke-width", 3)   // <– BOLDER
+    .attr("stroke-opacity", 1);
+
+
+            // Draw nodes
+            const node = g.select(".nodes")
+    .selectAll("circle")
+    .data(nodes)
+    .enter()
+    .append("circle")
+    .attr("r", 20)     // same bigger size for ALL nodes
+    .attr("fill", d => d.recommended ? "#FFD700" : colorScale(d.type))
+    .attr("stroke", "#fff")
+    .attr("stroke-width", 3)
+    .call(d3.drag()
+        .on("start", dragStarted)
+        .on("drag", dragged)
+        .on("end", dragEnded))
+    .on("click", function (event, d) {
+        showNodeInfo(d);
+    });
+
+            // Add labels to nodes
+            const label = g.select(".nodes")
+                .selectAll("text")
+                .data(nodes)
+                .enter()
+                .append("text")
+                .text(d => d.name)
+                .attr("font-size", d => {
+                    if (d.type === "primary") return "14px";
+                    if (d.type === "secondary") return "12px";
+                    return "10px";
+                })
+                .attr("dx", 15)
+                .attr("dy", 4)
+                .attr("fill", "white")
+                .attr("text-shadow", "1px 1px 2px black");
+
+            // Initialize force simulation
+           simulation = d3.forceSimulation(nodes)
+    .force("link", d3.forceLink(links)
+        .id(d => d.id)
+        .distance(d => 120 + d.weight * 1000)
+    )
+    .force("charge", d3.forceManyBody().strength(-3000))
+    .force("center", d3.forceCenter(width / 2, height / 2))
+    .force("collision", d3.forceCollide().radius(25))
+
+    .alpha(1)            // start fully energized
+    .alphaDecay(0)       // <— keeps simulation running FOREVER
+    .velocityDecay(0.25) // <— optional resistance (lower = more motion)
+
+    .on("tick", ticked);
+
+            function ticked() {
+                link
+                    .attr("x1", d => d.source.x)
+                    .attr("y1", d => d.source.y)
+                    .attr("x2", d => d.target.x)
+                    .attr("y2", d => d.target.y);
+
+                node
+                    .attr("cx", d => d.x)
+                    .attr("cy", d => d.y);
+
+                label
+                    .attr("x", d => d.x)
+                    .attr("y", d => d.y);
+            }
+
+            // After simulation is initialized
+svg.call(
+    zoom.transform,
+    d3.zoomIdentity
+        .translate(width / 2, height / 2) // center the graph
+        .scale(0.2)                       // zoom out to 40%
+);
+        }
+
+        // Drag functions for node interaction
+        function dragStarted(event, d) {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            d.fx = d.x;
+            d.fy = d.y;
+        }
+
+        function dragged(event, d) {
+            d.fx = event.x;
+            d.fy = event.y;
+        }
+
+        function dragEnded(event, d) {
+            if (!event.active) simulation.alphaTarget(0);
+            d.fx = null;
+            d.fy = null;
+        }
+
+        // Show node information when clicked
+        function showNodeInfo(node) {
+            const nodeInfo = document.querySelector('.node-info');
+
+            nodeInfo.innerHTML = `
+            <h3>Node Information</h3>
+            <p><strong>ID:</strong> ${node.id}</p>
+            <p><strong>Name:</strong> ${node.name}</p>
+            <p><strong>Type:</strong> ${node.type}</p>
+            <p><strong>Connections:</strong> ${links.filter(l => l.source.id === node.id || l.target.id === node.id).length}</p>
+        `;
+        }
+
+        function displayRecommendations(recommendations) {
+            const container = document.getElementById('recommendations-container');
+            container.innerHTML = ''; // Clear previous recommendations
+
+            const imageBase = 'https://image.tmdb.org/t/p/w500';
+
+            recommendations.forEach(movie => {
+                const card = document.createElement('div');
+                card.className = 'movie-card'; // Matches your CSS for movie cards
+                card.innerHTML = `
+            <img class="movie-poster" src="${movie.poster_path ? imageBase + movie.poster_path : 'placeholder.jpg'}" alt="${movie.title}">
+            <div class="movie-title">${movie.title}</div>
+            <div class="movie-rating">⭐ ${movie.vote_average || 'N/A'}</div>
+        `;
+                card.addEventListener('click', () => {
+                    window.location.href = `movie.html?id=${movie.id}`;
+                });
+                container.appendChild(card);
+            });
+        }
+
+
+        // Highlight node connections in the graph
+        function highlightNodeConnections(nodeId) {
+            // Reset all nodes and links to default appearance
+            g.selectAll(".nodes circle")
+                .attr("r", d => {
+                    if (d.type === "primary") return 15;
+                    if (d.type === "secondary") return 12;
+                    return 8;
+                })
+                .attr("fill", d => colorScale(d.type))
+                .attr("stroke", "#fff")
+                .attr("stroke-width", 2);
+
+            g.selectAll(".links line")
+                .attr("stroke", d => {
+                    const weight = d.weight;
+                    if (weight < 2) return "#4CAF50";
+                    if (weight < 3) return "#2196F3";
+                    return "#FF9800";
+                })
+                .attr("stroke-width", d => Math.max(1, 5 - d.weight / 2))
+                .attr("stroke-opacity", 0.7);
+
+            // Find connections for the node
+            const nodeConnections = links.filter(l =>
+                l.source.id === nodeId || l.target.id === nodeId
+            );
+
+            // Highlight connected nodes
+            const connectedNodeIds = new Set();
+            nodeConnections.forEach(link => {
+                connectedNodeIds.add(link.source.id);
+                connectedNodeIds.add(link.target.id);
+            });
+
+            g.selectAll(".nodes circle")
+                .filter(d => connectedNodeIds.has(d.id) && d.id !== nodeId)
+                .attr("r", d => {
+                    if (d.type === "secondary") return 14;
+                    return 10;
+                })
+                .attr("stroke", "#FFD700")
+                .attr("stroke-width", 3);
+
+            // Highlight connecting links
+            g.selectAll(".links line")
+                .filter(d => d.source.id === nodeId || d.target.id === nodeId)
+                .attr("stroke", "#4CAF50")
+                .attr("stroke-width", 3)
+                .attr("stroke-opacity", 1);
+        }
+
+        // Event listeners
+        // document.getElementById('reset-graph').addEventListener('click', function() {
+        //     buildGraph();
+        //     document.querySelector('.node-info').innerHTML = '<h3>Node Information</h3><p>Click on any node to see details here.</p>';
+        //     document.getElementById('algorithm-progress').style.width = '0%';
+        //     document.getElementById('genres-analyzed').textContent = '0';
+        //     document.getElementById('movies-recommended').textContent = '0';
+        //     document.getElementById('recommendations-container').innerHTML = '';
+        // });
+
+        // Graph control event listeners
+        document.getElementById('zoom-in').addEventListener('click', function () {
+            svg.transition().duration(750).call(zoom.scaleBy, 1.5);
+        });
+
+        document.getElementById('zoom-out').addEventListener('click', function () {
+            svg.transition().duration(750).call(zoom.scaleBy, 0.75);
+        });
+
+        document.getElementById('reset-view').addEventListener('click', function () {
+            svg.transition().duration(750).call(
+                zoom.transform,
+                d3.zoomIdentity
+            );
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', function () {
+            initGraph();
+        });
+
+        // Initialize the graph
+        initGraph();
+    </script>
+</body>
+
+</html>

@@ -5,109 +5,346 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Link Lab</title>
 <style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+
   body {
-    margin:0;
-    font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color:#111;
-    color:white;
+    background: linear-gradient(135deg, #0c0c0c 0%, #1a1a1a 50%, #0c0c0c 100%);
+    color: white;
+    min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: 
+      radial-gradient(circle at 20% 80%, rgba(229, 9, 20, 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, rgba(229, 9, 20, 0.05) 0%, transparent 50%);
+    animation: pulseBackground 8s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  @keyframes pulseBackground {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 0.8; }
   }
 
   /* Navbar */
   .navbar {
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    padding:1rem 2rem;
-    background-color:#141414;
-    position:sticky;
-    top:0;
-    z-index:100;
-    box-shadow:0 2px 10px rgba(0,0,0,0.7);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.2rem 3rem;
+    background: rgba(20, 20, 20, 0.95);
+    backdrop-filter: blur(20px);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    border-bottom: 1px solid rgba(229, 9, 20, 0.3);
+    box-shadow: 0 5px 30px rgba(0, 0, 0, 0.5);
   }
+
   .navbar h2 {
-    margin:0;
-    font-size:1.7rem;
-    color:#e50914;
-    letter-spacing:1px;
+    margin: 0;
+    font-size: 2.2rem;
+    background: linear-gradient(135deg, #e50914, #ff4757);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 800;
+    letter-spacing: 2px;
+    text-shadow: 0 2px 10px rgba(229, 9, 20, 0.3);
+    position: relative;
   }
+
+  .navbar h2::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, #e50914, transparent);
+    border-radius: 2px;
+  }
+
   .nav-links {
-    display:flex;
-    align-items:center;
-    gap:1rem;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
   }
+
   .nav-links button, .nav-links select, #searchInput {
-    background-color:#333;
-    color:white;
-    border:none;
-    padding:0.5rem 1rem;
-    border-radius:5px;
-    cursor:pointer;
-    font-size:0.9rem;
-    transition:background 0.3s, transform 0.2s;
+    background: rgba(51, 51, 51, 0.8);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 0.8rem 1.5rem;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(10px);
+    position: relative;
+    overflow: hidden;
   }
+
+  .nav-links button::before, .nav-links select::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transition: left 0.5s ease;
+  }
+
+  .nav-links button:hover::before, .nav-links select:hover::before {
+    left: 100%;
+  }
+
   .nav-links button:hover, .nav-links select:hover, #searchInput:focus {
-    background-color:#555;
-    transform:scale(1.05);
-    outline:none;
+    background: rgba(85, 85, 85, 0.9);
+    transform: translateY(-2px);
+    border-color: rgba(229, 9, 20, 0.5);
+    box-shadow: 0 8px 25px rgba(229, 9, 20, 0.2);
   }
+
   #searchInput {
-    width:200px;
+    width: 280px;
+    background: rgba(40, 40, 40, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 0.9rem 1.5rem;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+  }
+
+  #searchInput:focus {
+    outline: none;
+    border-color: #e50914;
+    box-shadow: 0 0 0 2px rgba(229, 9, 20, 0.3);
+    background: rgba(50, 50, 50, 0.95);
   }
 
   /* Prominent Recommendations button */
   #recommendBtn {
-    background-color: #e50914;
+    background: linear-gradient(135deg, #e50914 0%, #ff4757 100%);
     color: white;
-    font-weight: bold;
-    font-size: 1rem;
-    padding: 0.6rem 1.2rem;
-    border-radius: 8px;
-    transition: transform 0.2s, box-shadow 0.2s;
+    font-weight: 700;
+    font-size: 1.1rem;
+    padding: 0.9rem 2rem;
+    border-radius: 12px;
+    border: none;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 8px 25px rgba(229, 9, 20, 0.4);
   }
+
+  #recommendBtn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.6s ease;
+  }
+
   #recommendBtn:hover {
-    transform: scale(1.1);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-    background-color: #f6121d;
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 15px 35px rgba(229, 9, 20, 0.6);
+  }
+
+  #recommendBtn:hover::before {
+    left: 100%;
   }
 
   /* Movies grid */
   .movies-grid {
-    display:grid;
-    grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
-    gap:1rem;
-    padding:1rem;
-    max-width:1200px;
-    margin:1rem auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 2rem;
+    padding: 3rem;
+    max-width: 1400px;
+    margin: 2rem auto;
+    position: relative;
+    z-index: 1;
   }
+
   .movie-card {
-    cursor:pointer;
-    position:relative;
-    overflow:hidden;
-    border-radius:10px;
-    transition:transform 0.3s, box-shadow 0.3s;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    border-radius: 16px;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    background: rgba(30, 30, 30, 0.8);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
   }
+
+  .movie-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(229, 9, 20, 0.1), transparent);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 1;
+    border-radius: 16px;
+  }
+
+  .movie-card:hover::before {
+    opacity: 1;
+  }
+
   .movie-card img {
-    width:100%;
-    display:block;
-    border-radius:10px;
-    object-fit:cover;
+    width: 100%;
+    height: 300px;
+    display: block;
+    border-radius: 16px;
+    object-fit: cover;
+    transition: transform 0.4s ease;
   }
+
   .movie-card:hover {
-    transform:scale(1.08);
-    box-shadow:0 10px 20px rgba(0,0,0,0.7);
+    transform: translateY(-15px) scale(1.05);
+    box-shadow: 
+      0 25px 50px rgba(229, 9, 20, 0.3),
+      0 0 0 1px rgba(229, 9, 20, 0.2);
+    border-color: rgba(229, 9, 20, 0.5);
   }
+
+  .movie-card:hover img {
+    transform: scale(1.1);
+  }
+
   .movie-title {
-    position:absolute;
-    bottom:0;
-    width:100%;
-    text-align:center;
-    background:rgba(0,0,0,0.7);
-    padding:0.4rem;
-    font-weight:bold;
-    font-size:0.9rem;
-    letter-spacing:0.5px;
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    text-align: center;
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.9));
+    padding: 1.5rem 0.8rem 0.8rem;
+    font-weight: 600;
+    font-size: 1rem;
+    letter-spacing: 0.5px;
+    z-index: 2;
+    transition: all 0.3s ease;
   }
-  
+
+  .movie-card:hover .movie-title {
+    background: linear-gradient(transparent, rgba(229, 9, 20, 0.8));
+    padding-bottom: 1.2rem;
+  }
+
+  .rating-badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: linear-gradient(135deg, #e50914, #ff4757);
+    color: white;
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    z-index: 2;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    transition: all 0.3s ease;
+  }
+
+  .movie-card:hover .rating-badge {
+    transform: scale(1.1) rotate(5deg);
+  }
+
+  /* Floating animation for cards */
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+  }
+
+  .movie-card:nth-child(odd) {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .movie-card:nth-child(even) {
+    animation: float 6s ease-in-out infinite 1s;
+  }
+
+  /* Responsive Design */
+  @media (max-width: 1024px) {
+    .movies-grid {
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 1.5rem;
+      padding: 2rem;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .navbar {
+      padding: 1rem 1.5rem;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .nav-links {
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    #searchInput {
+      width: 200px;
+    }
+
+    .movies-grid {
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 1rem;
+      padding: 1.5rem;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .navbar h2 {
+      font-size: 1.8rem;
+    }
+
+    .nav-links {
+      gap: 1rem;
+    }
+
+    .nav-links button, .nav-links select, #searchInput {
+      padding: 0.7rem 1rem;
+      font-size: 0.9rem;
+    }
+
+    #searchInput {
+      width: 150px;
+    }
+
+    .movies-grid {
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      padding: 1rem;
+    }
+
+    .movie-card img {
+      height: 250px;
+    }
+  }
 </style>
 </head>
 <body>
@@ -196,9 +433,101 @@ function filterMovies(){
   displayMovies(filtered);
 }
 
-// Recommendations button placeholder
-document.getElementById('recommendBtn').addEventListener('click', () => {
-  alert('Recommendations feature coming soon!');
+// Recommendations button with CORS proxy
+document.getElementById('recommendBtn').addEventListener('click', async () => {
+    try {
+        const users = JSON.parse(localStorage.getItem('users') || '[]');
+        const watchlist = JSON.parse(localStorage.getItem('watchlist') || '[]');
+        const payload = { users, watchlist };
+
+        // Option A: Use a CORS proxy to call your backend
+        const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
+        const targetUrl = 'http://127.0.0.1:8080/recommend';
+        
+        const res = await fetch(proxyUrl + targetUrl, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) throw new Error('Network response was not ok');
+
+        const responseData = await res.json();
+        const orderedGenres = responseData.orderedGenres || [];
+        localStorage.setItem('orderedGenres', JSON.stringify(orderedGenres));
+        window.location.href = 'movies_recommendations.html';
+
+    } catch (error) {
+        console.warn('Backend unavailable, computing recommendations manually...', error);
+
+        const users = JSON.parse(localStorage.getItem('users') || '[]');
+        const watchlist = JSON.parse(localStorage.getItem('watchlist') || '[]');
+
+        // Count frequencies
+        const genreCount = {};
+
+        watchlist.forEach(movie => {
+            if (movie.genres && Array.isArray(movie.genres)) {
+                movie.genres.forEach(g => {
+                    genreCount[g] = (genreCount[g] || 0) + 1;
+                });
+            }
+        });
+
+        users.forEach(user => {
+            const moviePref = user?.preferences?.movies;
+            if (moviePref) {
+                genreCount[moviePref] = (genreCount[moviePref] || 0) + 1;
+            }
+        });
+
+        if (Object.keys(genreCount).length === 0) {
+            localStorage.setItem('orderedGenres', JSON.stringify(["Action", "Drama", "Comedy", "Thriller", "Sci-Fi"]));
+            window.location.href = 'movies_recommendations.html';
+            return;
+        }
+
+        // Build graph (fully connected) with weights = 1 + abs(count difference)
+        const genresList = Object.keys(genreCount);
+        const graph = {};
+        genresList.forEach(g => graph[g] = []);
+        for (let i = 0; i < genresList.length; i++) {
+            for (let j = i + 1; j < genresList.length; j++) {
+                const w = 1 + Math.abs(genreCount[genresList[i]] - genreCount[genresList[j]]);
+                graph[genresList[i]].push({ to: genresList[j], weight: w });
+                graph[genresList[j]].push({ to: genresList[i], weight: w });
+            }
+        }
+
+        // Dijkstra-like distances using a stack
+        const dist = {};
+        genresList.forEach(g => dist[g] = Infinity);
+
+        const source = genresList[0];
+        dist[source] = 0;
+        const stack = [source];
+
+        while (stack.length > 0) {
+            const current = stack.pop();
+            graph[current].forEach(edge => {
+                if (dist[current] + edge.weight < dist[edge.to]) {
+                    dist[edge.to] = dist[current] + edge.weight;
+                    stack.push(edge.to);
+                }
+            });
+        }
+
+        // Sort genres by computed distance (lower distance → higher priority)
+        let orderedGenres = Object.entries(dist)
+            .sort((a, b) => a[1] - b[1])
+            .map(entry => entry[0]);
+
+        localStorage.setItem('orderedGenres', JSON.stringify(orderedGenres));
+        window.location.href = 'movies_recommendations.html';
+    }
 });
 
 // Watchlist button logic
