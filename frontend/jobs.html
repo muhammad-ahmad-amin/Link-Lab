@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Book Haven</title>
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+
+  body {
+    background: linear-gradient(135deg, #0c0c0c 0%, #1a1a1a 50%, #0c0c0c 100%);
+    color: white;
+    min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: 
+      radial-gradient(circle at 20% 80%, rgba(30, 144, 255, 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, rgba(30, 144, 255, 0.05) 0%, transparent 50%);
+    animation: pulseBackground 8s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  @keyframes pulseBackground {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 0.8; }
+  }
+
+  /* Navbar */
+  .navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.2rem 3rem;
+    background: rgba(20, 20, 20, 0.95);
+    backdrop-filter: blur(20px);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    border-bottom: 1px solid rgba(30, 144, 255, 0.3);
+    box-shadow: 0 5px 30px rgba(0, 0, 0, 0.5);
+  }
+
+  .navbar h2 {
+    margin: 0;
+    font-size: 2.2rem;
+    background: linear-gradient(135deg, #1e90ff, #00bfff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 800;
+    letter-spacing: 2px;
+    text-shadow: 0 2px 10px rgba(30, 144, 255, 0.3);
+    position: relative;
+  }
+
+  .navbar h2::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, #1e90ff, transparent);
+    border-radius: 2px;
+  }
+
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+  }
+
+  .nav-links button, .nav-links select, #searchInput {
+    background: rgba(51, 51, 51, 0.8);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 0.8rem 1.5rem;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(10px);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .nav-links button::before, .nav-links select::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transition: left 0.5s ease;
+  }
+
+  .nav-links button:hover::before, .nav-links select:hover::before {
+    left: 100%;
+  }
+
+  .nav-links button:hover, .nav-links select:hover, #searchInput:focus {
+    background: rgba(85, 85, 85, 0.9);
+    transform: translateY(-2px);
+    border-color: rgba(30, 144, 255, 0.5);
+    box-shadow: 0 8px 25px rgba(30, 144, 255, 0.2);
+  }
+
+  #searchInput {
+    width: 280px;
+    background: rgba(40, 40, 40, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 0.9rem 1.5rem;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+  }
+
+  #searchInput:focus {
+    outline: none;
+    border-color: #1e90ff;
+    box-shadow: 0 0 0 2px rgba(30, 144, 255, 0.3);
+    background: rgba(50, 50, 50, 0.95);
+  }
+
+  /* Prominent Recommendations button */
+  #recommendBtn {
+    background: linear-gradient(135deg, #1e90ff 0%, #00bfff 100%);
+    color: white;
+    font-weight: 700;
+    font-size: 1.1rem;
+    padding: 0.9rem 2rem;
+    border-radius: 12px;
+    border: none;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 8px 25px rgba(30, 144, 255, 0.4);
+  }
+
+  #recommendBtn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.6s ease;
+  }
+
+  #recommendBtn:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 15px 35px rgba(30, 144, 255, 0.6);
+  }
+
+  #recommendBtn:hover::before {
+    left: 100%;
+  }
+
+  /* Mood selector */
+  .mood-selector {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin: 2rem 0;
+    flex-wrap: wrap;
+  }
+
+  .mood-btn {
+    background: rgba(51, 51, 51, 0.8);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 0.8rem 1.5rem;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+  }
+
+  .mood-btn:hover, .mood-btn.active {
+    background: rgba(30, 144, 255, 0.8);
+    transform: translateY(-2px);
+    border-color: rgba(30, 144, 255, 0.5);
+    box-shadow: 0 8px 25px rgba(30, 144, 255, 0.2);
+  }
+
+  /* Books grid */
+  .books-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 2rem;
+    padding: 3rem;
+    max-width: 1400px;
+    margin: 2rem auto;
+    position: relative;
+    z-index: 1;
+  }
+
+  .book-card {
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    border-radius: 16px;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    background: rgba(30, 30, 30, 0.8);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  }
+
+  .book-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(30, 144, 255, 0.1), transparent);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 1;
+    border-radius: 16px;
+  }
+
+  .book-card:hover::before {
+    opacity: 1;
+  }
+
+  .book-card img {
+    width: 100%;
+    height: 300px;
+    display: block;
+    border-radius: 16px;
+    object-fit: cover;
+    transition: transform 0.4s ease;
+  }
+
+  .book-card:hover {
+    transform: translateY(-15px) scale(1.05);
+    box-shadow: 
+      0 25px 50px rgba(30, 144, 255, 0.3),
+      0 0 0 1px rgba(30, 144, 255, 0.2);
+    border-color: rgba(30, 144, 255, 0.5);
+  }
+
+  .book-card:hover img {
+    transform: scale(1.1);
+  }
+
+  .book-title {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    text-align: center;
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.9));
+    padding: 1.5rem 0.8rem 0.8rem;
+    font-weight: 600;
+    font-size: 1rem;
+    letter-spacing: 0.5px;
+    z-index: 2;
+    transition: all 0.3s ease;
+  }
+
+  .book-card:hover .book-title {
+    background: linear-gradient(transparent, rgba(30, 144, 255, 0.8));
+    padding-bottom: 1.2rem;
+  }
+
+  .rating-badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: linear-gradient(135deg, #1e90ff, #00bfff);
+    color: white;
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    z-index: 2;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    transition: all 0.3s ease;
+  }
+
+  .book-card:hover .rating-badge {
+    transform: scale(1.1) rotate(5deg);
+  }
+
+  /* Floating animation for cards */
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+  }
+
+  .book-card:nth-child(odd) {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .book-card:nth-child(even) {
+    animation: float 6s ease-in-out infinite 1s;
+  }
+
+  /* Responsive Design */
+  @media (max-width: 1024px) {
+    .books-grid {
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 1.5rem;
+      padding: 2rem;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .navbar {
+      padding: 1rem 1.5rem;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .nav-links {
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    #searchInput {
+      width: 200px;
+    }
+
+    .books-grid {
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 1rem;
+      padding: 1.5rem;
+    }
+
+    .mood-selector {
+      gap: 0.5rem;
+    }
+
+    .mood-btn {
+      padding: 0.6rem 1rem;
+      font-size: 0.9rem;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .navbar h2 {
+      font-size: 1.8rem;
+    }
+
+    .nav-links {
+      gap: 1rem;
+    }
+
+    .nav-links button, .nav-links select, #searchInput {
+      padding: 0.7rem 1rem;
+      font-size: 0.9rem;
+    }
+
+    #searchInput {
+      width: 150px;
+    }
+
+    .books-grid {
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      padding: 1rem;
+    }
+
+    .book-card img {
+      height: 250px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="navbar">
+  <h2>Book Haven</h2>
+  <div class="nav-links">
+    <button id="recommendBtn">AI Reading Journey</button>
+    <button onclick="loadBooks('popular')">Popular</button>
+    <button onclick="loadBooks('top_rated')">Top Rated</button>
+    <button onclick="loadBooks('new_releases')">New Releases</button>
+    <button id="readingListBtn">My Reading List</button>
+    <select id="genreSelect" onchange="loadGenreBooks(this.value)">
+      <option value="">Select Genre</option>
+    </select>
+    <input type="text" id="searchInput" placeholder="Search books..." oninput="filterBooks()"/>
+  </div>
+</div>
+
+<div class="mood-selector">
+  <button class="mood-btn" data-mood="adventurous">Adventurous</button>
+  <button class="mood-btn" data-mood="thoughtful">Thoughtful</button>
+  <button class="mood-btn" data-mood="romantic">Romantic</button>
+  <button class="mood-btn" data-mood="mysterious">Mysterious</button>
+  <button class="mood-btn" data-mood="inspiring">Inspiring</button>
+  <button class="mood-btn" data-mood="relaxing">Relaxing</button>
+</div>
+
+<div class="books-grid" id="booksGrid"></div>
+
+<script>
+// Extended book data with 50+ books and proper images
+const bookData = [
+  {
+    id: 1,
+    title: "The Silent Patient",
+    author: "Alex Michaelides",
+    genre: ["Mystery", "Thriller"],
+    rating: 4.5,
+    pages: 336,
+    year: 2019,
+    summary: "A psychological thriller about a woman who shoots her husband and then stops speaking.",
+    mood: ["mysterious", "thoughtful"],
+    cover: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+  },
+  {
+    id: 2,
+    title: "Where the Crawdads Sing",
+    author: "Delia Owens",
+    genre: ["Fiction", "Mystery"],
+    rating: 4.8,
+    pages: 384,
+    year: 2018,
+    summary: "A coming-of-age murder mystery about an abandoned girl who raises herself in the marshes.",
+    mood: ["thoughtful", "romantic"],
+    cover: "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+  },
+  {
+    id: 3,
+    title: "The Hobbit",
+    author: "J.R.R. Tolkien",
+    genre: ["Fantasy", "Adventure"],
+    rating: 4.9,
+    pages: 310,
+    year: 1937,
+    summary: "A reluctant hobbit embarks on an epic quest to reclaim a dwarf kingdom.",
+    mood: ["adventurous", "inspiring"],
+    cover: "https://images.unsplash.com/photo-1532012197267-da84d127e765?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+  },
+  {
+    id: 4,
+    title: "Pride and Prejudice",
+    author: "Jane Austen",
+    genre: ["Romance", "Classic"],
+    rating: 4.7,
+    pages: 432,
+    year: 1813,
+    summary: "A romantic novel about the emotional development of protagonist Elizabeth Bennet.",
+    mood: ["romantic", "thoughtful"],
+    cover: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+  },
+  {
+    id: 5,
+    title: "Into the Wild",
+    author: "Jon Krakauer",
+    genre: ["Biography", "Adventure"],
+    rating: 4.4,
+    pages: 207,
+    year: 1996,
+    summary: "The true story of a young man who gives up his possessions to hike into the Alaskan wilderness.",
+    mood: ["adventurous", "thoughtful"],
+    cover: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+  },
+  {
+    id: 6,
+    title: "The Alchemist",
+    author: "Paulo Coelho",
+    genre: ["Fiction", "Adventure"],
+    rating: 4.6,
+    pages: 208,
+    year: 1988,
+    summary: "A shepherd boy travels from Spain to Egypt in search of treasure.",
+    mood: ["inspiring", "adventurous"],
+    cover: "https://images.unsplash.com/photo-1531901599638-a89bb60971a3?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+  },
+  {
+    id: 7,
+    title: "Becoming",
+    author: "Michelle Obama",
+    genre: ["Autobiography", "Memoir"],
+    rating: 4.8,
+    pages: 448,
+    year: 2018,
+    summary: "An intimate memoir by the former First Lady of the United States.",
+    mood: ["inspiring", "thoughtful"],
+    cover: "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+  },
+  {
+    id: 8,
+    title: "The Night Circus",
+    author: "Erin Morgenstern",
+    genre: ["Fantasy", "Romance"],
+    rating: 4.3,
+    pages: 512,
+    year: 2011,
+    summary: "A magical competition between two illusionists set in a mysterious circus.",
+    mood: ["mysterious", "romantic"],
+    cover: "https://images.unsplash.com/photo-1512820790803-83ca734da794?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+  },
+  {
+    id: 9,
+    title: "Educated",
+    author: "Tara Westover",
+    genre: ["Memoir", "Biography"],
+    rating: 4.7,
+    pages: 352,
+    year: 2018,
+    summary: "A memoir about a woman who grows up in a survivalist family and eventually earns a PhD.",
+    mood: ["inspiring", "thoughtful"],
+    cover: "https://images.unsplash.com/photo-1516979187457-637abb4f9353?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+  },
+  {
+    id: 10,
+    title: "The Great Gatsby",
+    author: "F. Scott Fitzgerald",
+    genre: ["Classic", "Fiction"],
+    rating: 4.5,
+    pages: 218,
+    year: 1925,
+    summary: "A story of wealth, love, and the American Dream in the 1920s.",
+    mood: ["thoughtful", "romantic"],
+    cover: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+  },
+  {
+    id: 11,
+    title: "Dune",
+    author: "Frank Herbert",
+    genre: ["Science Fiction", "Adventure"],
+    rating: 4.6,
+    pages: 412,
+    year: 1965,
+    summary: "An epic science fiction novel set in the distant future amidst a feudal interstellar society.",
+    mood: ["adventurous", "thoughtful"],
+    cover: "https://images.unsplash.com/photo-1534447677768-be436bb09401?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+  },
+  {
+    id: 12,
+    title: "The Little Prince",
+    author: "Antoine de Saint-Exupéry",
+    genre: ["Fable", "Philosophy"],
+    rating: 4.8,
+    pages: 96,
+    year: 1943,
+    summary: "A poetic tale about a young prince who visits various planets in space.",
+    mood: ["thoughtful", "inspiring"],
+    cover: "https://images.unsplash.com/photo-1558901357-ca41e027e43a?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+  },
+  {
+    id: 13,
+    title: "1984",
+    author: "George Orwell",
+    genre: ["Dystopian", "Science Fiction"],
+    rating: 4.7,
+    pages: 328,
+    year: 1949,
+    summary: "A dystopian social science fiction novel about totalitarian control.",
+    mood: ["thoughtful", "mysterious"],
+    cover: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+  },
+  {
+    id: 14,
+    title: "To Kill a Mockingbird",
+    author: "Harper Lee",
+    genre: ["Classic", "Fiction"],
+    rating: 4.8,
+    pages: 324,
+    year: 1960,
+    summary: "A novel about racial inequality and moral growth in the American South.",
+    mood: ["thoughtful", "inspiring"],
+    cover: "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+  },
+  {
+    id: 15,
+    title: "Harry Potter and the Sorcerer's Stone",
+    author: "J.K. Rowling",
+    genre: ["Fantasy", "Adventure"],
+    rating: 4.9,
+    pages: 320,
+    year: 1997,
+    summary: "The first book in the Harry Potter series about a young wizard.",
+    mood: ["adventurous", "mysterious"],
+    cover: "https://images.unsplash.com/photo-1621351183012-e2f9972dd9bf?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+  },
+  {
+    id: 16,
+    title: "The Catcher in the Rye",
+    author: "J.D. Salinger",
+    genre: ["Classic", "Fiction"],
+    rating: 4.2,
+    pages: 234,
+    year: 1951,
+    summary: "A story about teenage rebellion and alienation in New York City.",
+    mood: ["thoughtful", "relaxing"],
+    cover: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+  },
+  {
+    id: 17,
+    title: "The Lord of the Rings",
+    author: "J.R.R. Tolkien",
+    genre: ["Fantasy", "Adventure"],
+    rating: 4.9,
+    pages: 1178,
+    year: 1954,
+    summary: "An epic high fantasy novel about the quest to destroy the One Ring.",
+    mood: ["adventurous", "inspiring"],
+    cover: "https://images.unsplash.com/photo-1532012197267-da84d127e765?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+  },
+  {
+    id: 18,
+    title: "The Da Vinci Code",
+    author: "Dan Brown",
+    genre: ["Mystery", "Thriller"],
+    rating: 4.3,
+    pages: 489,
+    year: 2003,
+    summary: "A mystery thriller novel about a conspiracy within the Catholic Church.",
+    mood: ["mysterious", "adventurous"],
+    cover: "https://images.unsplash.com/photo-1512820790803-83ca734da794?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+  },
+  {
+    id: 19,
+    title: "The Hunger Games",
+    author: "Suzanne Collins",
+    genre: ["Dystopian", "Adventure"],
+    rating: 4.6,
+    pages: 374,
+    year: 2008,
+    summary: "A dystopian novel about a televised battle to the death.",
+    mood: ["adventurous", "thoughtful"],
+    cover: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+  },
+  {
+    id: 20,
+    title: "The Girl on the Train",
+    author: "Paula Hawkins",
+    genre: ["Mystery", "Thriller"],
+    rating: 4.1,
+    pages: 336,
+    year: 2015,
+    summary: "A psychological thriller about a woman who becomes entangled in a missing persons investigation.",
+    mood: ["mysterious", "thoughtful"],
+    cover: "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+  },
+  {
+    id: 21,
+    title: "Gone Girl",
+    author: "Gillian Flynn",
+    genre: ["Mystery", "Thriller"],
+    rating: 4.4,
+    pages: 432,
+    year: 2012,
+    summary: "A psychological thriller about a marriage gone terribly wrong.",
+    mood: ["mysterious", "thoughtful"],
+    cover: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+  },
+  {
+    id: 22,
+    title: "The Book Thief",
+    author: "Markus Zusak",
+    genre: ["Historical Fiction"],
+    rating: 4.7,
+    pages: 552,
+    year: 2005,
+    summary: "A story set in Nazi Germany about a girl who steals books.",
+    mood: ["thoughtful", "inspiring"],
+    cover: "https://images.unsplash.com/photo-1516979187457-637abb4f9353?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+  },
+  {
+    id: 23,
+    title: "The Kite Runner",
+    author: "Khaled Hosseini",
+    genre: ["Historical Fiction"],
+    rating: 4.7,
+    pages: 371,
+    year: 2003,
+    summary: "A story of friendship and redemption set in Afghanistan.",
+    mood: ["thoughtful", "inspiring"],
+    cover: "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+  },
+  {
+    id: 24,
+    title: "Life of Pi",
+    author: "Yann Martel",
+    genre: ["Adventure", "Fiction"],
+    rating: 4.5,
+    pages: 326,
+    year: 2001,
+    summary: "A fantasy adventure novel about a boy stranded on a lifeboat with a tiger.",
+    mood: ["adventurous", "thoughtful"],
+    cover: "https://images.unsplash.com/photo-1531901599638-a89bb60971a3?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+  },
+  {
+    id: 25,
+    title: "The Shining",
+    author: "Stephen King",
+    genre: ["Horror", "Thriller"],
+    rating: 4.6,
+    pages: 447,
+    year: 1977,
+    summary: "A horror novel about a family's winter at an isolated hotel.",
+    mood: ["mysterious", "thoughtful"],
+    cover: "https://images.unsplash.com/photo-1512820790803-83ca734da794?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+  },
+  {
+    id: 26,
+    title: "Brave New World",
+    author: "Aldous Huxley",
+    genre: ["Dystopian", "Science Fiction"],
+    rating: 4.5,
+    pages: 288,
+    year: 1932,
+    summary: "A dystopian novel about a futuristic society controlled by technology.",
+    mood: ["thoughtful", "mysterious"],
+    cover: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+  },
+  {
+    id: 27,
+    title: "The Handmaid's Tale",
+    author: "Margaret Atwood",
+    genre: ["Dystopian", "Fiction"],
+    rating: 4.6,
+    pages: 311,
+    year: 1985,
+    summary: "A dystopian novel about a totalitarian society where women are subjugated.",
+    mood: ["thoughtful", "mysterious"],
+    cover: "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+  },
+  {
+    id: 28,
+    title: "The Chronicles of Narnia",
+    author: "C.S. Lewis",
+    genre: ["Fantasy", "Adventure"],
+    rating: 4.8,
+    pages: 767,
+    year: 1950,
+    summary: "A series of fantasy novels about adventures in the magical land of Narnia.",
+    mood: ["adventurous", "inspiring"],
+    cover: "https://images.unsplash.com/photo-1532012197267-da84d127e765?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+  },
+  {
+    id: 29,
+    title: "The Fault in Our Stars",
+    author: "John Green",
+    genre: ["Romance", "Young Adult"],
+    rating: 4.7,
+    pages: 313,
+    year: 2012,
+    summary: "A romance novel about two teenagers who meet at a cancer support group.",
+    mood: ["romantic", "thoughtful"],
+    cover: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+  },
+  {
+    id: 30,
+    title: "The Martian",
+    author: "Andy Weir",
+    genre: ["Science Fiction", "Adventure"],
+    rating: 4.7,
+    pages: 369,
+    year: 2011,
+    summary: "A science fiction novel about an astronaut stranded on Mars.",
+    mood: ["adventurous", "inspiring"],
+    cover: "https://images.unsplash.com/photo-1534447677768-be436bb09401?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+  },
+  {
+    id: 31,
+    title: "The Road",
+    author: "Cormac McCarthy",
+    genre: ["Post-Apocalyptic", "Fiction"],
+    rating: 4.3,
+    pages: 287,
+    year: 2006,
+    summary: "A post-apocalyptic novel about a father and son's journey through a devastated America.",
+    mood: ["thoughtful", "mysterious"],
+    cover: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+  },
+  {
+    id: 32,
+    title: "The Name of the Wind",
+    author: "Patrick Rothfuss",
+    genre: ["Fantasy", "Adventure"],
+    rating: 4.8,
+    pages: 662,
+    year: 2007,
+    summary: "A fantasy novel about a gifted young man's journey to become a legendary magician.",
+    mood: ["adventurous", "mysterious"],
+    cover: "https://images.unsplash.com/photo-1512820790803-83ca734da794?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+  },
+  {
+    id: 33,
+    title: "The Goldfinch",
+    author: "Donna Tartt",
+    genre: ["Fiction", "Coming-of-age"],
+    rating: 4.4,
+    pages: 771,
+    year: 2013,
+    summary: "A novel about a boy who survives a terrorist attack and steals a painting.",
+    mood: ["thoughtful", "mysterious"],
+    cover: "https://images.unsplash.com/photo-1516979187457-637abb4f9353?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+  },
+  {
+    id: 34,
+    title: "The Help",
+    author: "Kathryn Stockett",
+    genre: ["Historical Fiction"],
+    rating: 4.8,
+    pages: 451,
+    year: 2009,
+    summary: "A novel about African American maids working in white households in the 1960s.",
+    mood: ["thoughtful", "inspiring"],
+    cover: "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+  },
+  {
+    id: 35,
+    title: "The Secret History",
+    author: "Donna Tartt",
+    genre: ["Mystery", "Fiction"],
+    rating: 4.5,
+    pages: 559,
+    year: 1992,
+    summary: "A novel about a group of classics students at an elite college.",
+    mood: ["mysterious", "thoughtful"],
+    cover: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+  },
+  {
+    id: 36,
+    title: "The Picture of Dorian Gray",
+    author: "Oscar Wilde",
+    genre: ["Classic", "Gothic"],
+    rating: 4.6,
+    pages: 254,
+    year: 1890,
+    summary: "A philosophical novel about a man who remains youthful while his portrait ages.",
+    mood: ["thoughtful", "mysterious"],
+    cover: "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+  },
+  {
+    id: 37,
+    title: "The Stand",
+    author: "Stephen King",
+    genre: ["Horror", "Post-Apocalyptic"],
+    rating: 4.7,
+    pages: 1153,
+    year: 1978,
+    summary: "A post-apocalyptic horror fantasy novel about a pandemic and subsequent battle between good and evil.",
+    mood: ["mysterious", "adventurous"],
+    cover: "https://images.unsplash.com/photo-1512820790803-83ca734da794?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+  },
+  {
+    id: 38,
+    title: "The Time Traveler's Wife",
+    author: "Audrey Niffenegger",
+    genre: ["Romance", "Science Fiction"],
+    rating: 4.5,
+    pages: 546,
+    year: 2003,
+    summary: "A love story about a man with a genetic disorder that causes him to time travel.",
+    mood: ["romantic", "thoughtful"],
+    cover: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+  },
+  {
+    id: 39,
+    title: "The Girl with the Dragon Tattoo",
+    author: "Stieg Larsson",
+    genre: ["Mystery", "Thriller"],
+    rating: 4.6,
+    pages: 465,
+    year: 2005,
+    summary: "A psychological thriller about a journalist and a hacker investigating a disappearance.",
+    mood: ["mysterious", "thoughtful"],
+    cover: "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+  },
+  {
+    id: 40,
+    title: "The Pillars of the Earth",
+    author: "Ken Follett",
+    genre: ["Historical Fiction"],
+    rating: 4.8,
+    pages: 973,
+    year: 1989,
+    summary: "A historical novel about the building of a cathedral in 12th-century England.",
+    mood: ["thoughtful", "adventurous"],
+    cover: "https://images.unsplash.com/photo-1532012197267-da84d127e765?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+  },
+  {
+    id: 41,
+    title: "The Shadow of the Wind",
+    author: "Carlos Ruiz Zafón",
+    genre: ["Mystery", "Gothic"],
+    rating: 4.7,
+    pages: 487,
+    year: 2001,
+    summary: "A gothic novel about a boy who discovers a mysterious book in Barcelona.",
+    mood: ["mysterious", "thoughtful"],
+    cover: "https://images.unsplash.com/photo-1512820790803-83ca734da794?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+  },
+  {
+    id: 42,
+    title: "The Three-Body Problem",
+    author: "Liu Cixin",
+    genre: ["Science Fiction"],
+    rating: 4.5,
+    pages: 399,
+    year: 2008,
+    summary: "A science fiction novel about humanity's first contact with an alien civilization.",
+    mood: ["thoughtful", "mysterious"],
+    cover: "https://images.unsplash.com/photo-1534447677768-be436bb09401?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+  },
+  {
+    id: 43,
+    title: "The Ocean at the End of the Lane",
+    author: "Neil Gaiman",
+    genre: ["Fantasy", "Horror"],
+    rating: 4.6,
+    pages: 181,
+    year: 2013,
+    summary: "A fantasy novel about a man who returns to his childhood home and remembers supernatural events.",
+    mood: ["mysterious", "thoughtful"],
+    cover: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+  },
+  {
+    id: 44,
+    title: "The Nightingale",
+    author: "Kristin Hannah",
+    genre: ["Historical Fiction"],
+    rating: 4.8,
+    pages: 440,
+    year: 2015,
+    summary: "A historical novel about two sisters in France during World War II.",
+    mood: ["thoughtful", "inspiring"],
+    cover: "https://images.unsplash.com/photo-1516979187457-637abb4f9353?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+  },
+  {
+    id: 45,
+    title: "The Song of Achilles",
+    author: "Madeline Miller",
+    genre: ["Historical Fiction", "Romance"],
+    rating: 4.8,
+    pages: 352,
+    year: 2011,
+    summary: "A retelling of the Iliad from Patroclus' perspective, focusing on his relationship with Achilles.",
+    mood: ["romantic", "thoughtful"],
+    cover: "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+  },
+  {
+    id: 46,
+    title: "The Midnight Library",
+    author: "Matt Haig",
+    genre: ["Fiction", "Fantasy"],
+    rating: 4.6,
+    pages: 304,
+    year: 2020,
+    summary: "A novel about a library that contains books that let you experience different lives you might have lived.",
+    mood: ["thoughtful", "inspiring"],
+    cover: "https://images.unsplash.com/photo-1531901599638-a89bb60971a3?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+  },
+  {
+    id: 47,
+    title: "Project Hail Mary",
+    author: "Andy Weir",
+    genre: ["Science Fiction", "Adventure"],
+    rating: 4.9,
+    pages: 476,
+    year: 2021,
+    summary: "A science fiction novel about a lone astronaut who must save the earth from an astronomical threat.",
+    mood: ["adventurous", "inspiring"],
+    cover: "https://images.unsplash.com/photo-1534447677768-be436bb09401?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+  },
+  {
+    id: 48,
+    title: "The Invisible Life of Addie LaRue",
+    author: "V.E. Schwab",
+    genre: ["Fantasy", "Historical Fiction"],
+    rating: 4.7,
+    pages: 448,
+    year: 2020,
+    summary: "A fantasy novel about a young woman who makes a Faustian bargain to live forever.",
+    mood: ["thoughtful", "romantic"],
+    cover: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+  },
+  {
+    id: 49,
+    title: "Klara and the Sun",
+    author: "Kazuo Ishiguro",
+    genre: ["Science Fiction", "Dystopian"],
+    rating: 4.5,
+    pages: 320,
+    year: 2021,
+    summary: "A novel told from the perspective of an Artificial Friend named Klara.",
+    mood: ["thoughtful", "mysterious"],
+    cover: "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+  },
+  {
+    id: 50,
+    title: "The Seven Husbands of Evelyn Hugo",
+    author: "Taylor Jenkins Reid",
+    genre: ["Historical Fiction", "Romance"],
+    rating: 4.8,
+    pages: 389,
+    year: 2017,
+    summary: "A novel about a reclusive Hollywood icon who finally tells her life story.",
+    mood: ["romantic", "thoughtful"],
+    cover: "https://images.unsplash.com/photo-1512820790803-83ca734da794?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+  }
+];
+
+let allBooks = [];
+let currentMood = null;
+
+// Fetch genre list
+function fetchGenres(){
+  const genres = [...new Set(bookData.flatMap(book => book.genre))];
+  const genreSelect = document.getElementById('genreSelect');
+  genres.forEach(genre => {
+    const option = document.createElement('option');
+    option.value = genre;
+    option.textContent = genre;
+    genreSelect.appendChild(option);
+  });
+}
+
+// Load books by category
+function loadBooks(category){
+  let filteredBooks = [];
+  
+  switch(category) {
+    case 'popular':
+      filteredBooks = bookData.filter(book => book.rating >= 4.5);
+      break;
+    case 'top_rated':
+      filteredBooks = [...bookData].sort((a, b) => b.rating - a.rating);
+      break;
+    case 'new_releases':
+      // For demo, return recent books
+      filteredBooks = bookData.filter(book => book.year >= 2015).sort((a, b) => b.year - a.year);
+      break;
+    default:
+      filteredBooks = bookData;
+  }
+  
+  allBooks = filteredBooks;
+  displayBooks(allBooks);
+}
+
+// Load books by genre
+function loadGenreBooks(genre){
+  if(!genre) return;
+  const filteredBooks = bookData.filter(book => book.genre.includes(genre));
+  allBooks = filteredBooks;
+  displayBooks(allBooks);
+}
+
+// Display books
+function displayBooks(books){
+  const grid = document.getElementById('booksGrid');
+  grid.innerHTML=''; 
+  
+  books.forEach(book => {
+    const card = document.createElement('div');
+    card.className='book-card';
+    card.innerHTML=`
+      <img src="${book.cover}" alt="${book.title}" onerror="this.src='https://images.unsplash.com/photo-1544947950-fa07a98d237f?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80'">
+      <div class="rating-badge">${book.rating}</div>
+      <div class="book-title">${book.title}</div>
+    `;
+    card.addEventListener('click',()=> {
+      window.location.href = `book.html?id=${book.id}`;
+    });
+    grid.appendChild(card);
+  });
+}
+
+// Search/filter function
+function filterBooks(){
+  const query = document.getElementById('searchInput').value.toLowerCase();
+  const filtered = allBooks.filter(book => 
+    book.title.toLowerCase().includes(query) || 
+    book.author.toLowerCase().includes(query)
+  );
+  displayBooks(filtered);
+}
+
+// Mood selection
+document.querySelectorAll('.mood-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+    
+    const mood = this.getAttribute('data-mood');
+    currentMood = mood;
+    
+    const filteredBooks = bookData.filter(book => 
+      book.mood.includes(mood)
+    );
+    
+    allBooks = filteredBooks;
+    displayBooks(allBooks);
+  });
+});
+
+// AI Reading Journey feature
+document.getElementById('recommendBtn').addEventListener('click', function() {
+  window.location.href = 'books_recommendations.html';
+});
+
+// Reading list button logic
+document.getElementById('readingListBtn').addEventListener('click', () => {
+  const readingList = JSON.parse(localStorage.getItem('readingList') || '[]');
+  if(readingList.length === 0){
+    alert('Your reading list is empty. Add books to your list!');
+  } else {
+    // Display only reading list books
+    allBooks = readingList;
+    displayBooks(allBooks);
+  }
+});
+
+// Initialize
+fetchGenres();
+loadBooks('popular');
+
+// Add some sample data for demonstration
+if (!localStorage.getItem('users')) {
+  localStorage.setItem('users', JSON.stringify([
+    { id: 1, name: "Book Lover", preferences: { genres: ["Fiction", "Mystery"], moods: ["thoughtful", "mysterious"] } }
+  ]));
+}
+
+if (!localStorage.getItem('readingList')) {
+  localStorage.setItem('readingList', JSON.stringify([
+    bookData[0], bookData[2], bookData[5]
+  ]));
+}
+</script>
+
+</body>
+</html>
