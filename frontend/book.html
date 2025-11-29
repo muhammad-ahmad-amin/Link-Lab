@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Book Details</title>
+<style>
+  /* Add all the same CSS styles from the previous book.html */
+  /* ... (include all the CSS from the previous book.html file) ... */
+</style>
+</head>
+<body>
+
+<div class="navbar">
+  <h2>Book Haven</h2>
+  <div class="nav-links">
+    <button onclick="window.location.href='books.html'">Back to Books</button>
+    <button onclick="window.location.href='books_recommendations.html'">Recommendations</button>
+    <button onclick="window.location.href='books.html'">My Reading List</button>
+    <select onchange="window.location.href='books.html'">
+      <option>Browse Genres</option>
+    </select>
+  </div>
+</div>
+
+<div class="book-details">
+  <div class="book-cover">
+    <img id="bookCover" src="" alt="Book Cover" onerror="this.src='https://images.unsplash.com/photo-1544947950-fa07a98d237f?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80'">
+  </div>
+  
+  <div class="book-info">
+    <h1 class="book-title" id="bookTitle"></h1>
+    <h2 class="book-author" id="bookAuthor"></h2>
+    
+    <div class="book-meta">
+      <div class="meta-item">
+        <span class="meta-value" id="bookRating"></span>
+        <span class="meta-label">Rating</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-value" id="bookPages"></span>
+        <span class="meta-label">Pages</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-value" id="bookYear"></span>
+        <span class="meta-label">Year</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-value" id="bookGenre"></span>
+        <span class="meta-label">Genre</span>
+      </div>
+    </div>
+
+    <div class="book-tags" id="bookTags">
+      <!-- Mood tags will be populated here -->
+    </div>
+    
+    <div class="book-summary">
+      <h3>Summary</h3>
+      <p id="bookSummary"></p>
+    </div>
+    
+    <div class="action-buttons">
+      <button class="action-btn" id="addToListBtn">+ Add to Reading List</button>
+      <button class="action-btn" id="previewBtn" style="background: rgba(255, 255, 255, 0.1);">Preview Book</button>
+    </div>
+
+    <div class="similar-authors">
+      <h3>Similar Authors</h3>
+      <div class="authors-list" id="similarAuthors">
+        <!-- Similar authors will be populated here -->
+      </div>
+    </div>
+    
+    <div class="similar-books">
+      <h3>Similar Books You Might Like</h3>
+      <div class="similar-grid" id="similarBooks">
+        <!-- Similar books will be populated here -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API_BASE_URL = 'https://www.googleapis.com/books/v1/volumes';
+let currentBook = null;
+
+// Get book ID from URL
+const params = new URLSearchParams(window.location.search);
+const bookId = params.get('id');
+const bookTitle = params.get('title');
+
+// Fetch book details from API
+async function fetchBookDetails(id) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/${id}`);
+    
+    if (!response.ok) {
+      throw new Error('Book not found');
+    }
+    
+    const data = await response.json();
+    const volumeInfo = data.volumeInfo;
+    
+    // Transform API data to our format
+    currentBook = {
+      id: data.id,
+      title: volumeInfo.title || 'Unknown Title',
+      author: volumeInfo.authors ? volumeInfo.authors.join(', ') : 'Unknown Author',
+      genre: volumeInfo.categories || ['General'],
+      rating: volumeInfo.averageRating || (4 + Math.random()).toFixed(1),
+      pages: volumeInfo.pageCount || Math.floor(Math.random() * 500) + 100,
+      year: volumeInfo.publishedDate ? new Date(volumeInfo.publishedDate).getFullYear() : 'Unknown',
+      summary: volumeInfo.description || 'No description available.',
+      cover: volumeInfo.imageLinks ? volumeInfo.imageLinks.thumbnail.replace('http://', 'https://').replace('&edge=curl', '') : 
+             'https://images.unsplash.com/photo-1544947950-fa07a98d237f?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80',
+      previewLink: volumeInfo.previewLink || null,
+      similarAuthors: volumeInfo.authors || ['Various Authors']
+    };
+    
+    displayBook(currentBook);
+    displaySimilarAuthors(currentBook);
+    await fetchSimilarBooks(currentBook);
+    checkListStatus();
+    
+  } catch (error) {
+    console.error('Error fetching book details:', error);
+    document.body.innerHTML = `
+      <div style="text-align: center; margin-top: 5rem;">
+        <h1>Book not found</h1>
+        <p style="margin: 1rem 0; color: #ccc;">The requested book could not be loaded.</p>
+        <button onclick="window.location.href='books.html'" style="margin-top: 2rem; padding: 1rem 2rem; background: #1e90ff; color: white; border: none; border-radius: 8px; cursor: pointer;">
+          Back to Books
+        </button>
+      </div>
+    `;
+  }
+}
+
+// Fetch similar books based on current book
+async function fetchSimilarBooks(book) {
+  const similarGrid = document.getElementById('similarBooks');
+  similarGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 2rem;">Loading similar books...</div>';
+  
+  try {
+    // Search for books by the same author or similar genre
+    const query = book.author ? `inauthor:"${book.author.split(',')[0]}"` : `subject:${book.genre[0] || 'fiction'}`;
+    const response = await fetch(`${API_BASE_URL}?q=${encodeURIComponent(query)}&maxResults=4&printType=books`);
+    
+    if (response.ok) {
+      const data = await response.json();
+      
+      if (data.items) {
+        displaySimilarBooks(data.items.filter(item => item.id !== book.id).slice(0, 4));
+      } else {
+        similarGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 2rem;">No similar books found</div>';
+      }
+    }
+  } catch (error) {
+    console.error('Error fetching similar books:', error);
+    similarGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 2rem;">Error loading similar books</div>';
+  }
+}
+
+// Display book info
+function displayBook(book) {
+  document.getElementById('bookCover').src = book.cover;
+  document.getElementById('bookTitle').textContent = book.title;
+  document.getElementById('bookAuthor').textContent = `by ${book.author}`;
+  document.getElementById('bookRating').textContent = book.rating;
+  document.getElementById('bookPages').textContent = book.pages;
+  document.getElementById('bookYear').textContent = book.year;
+  document.getElementById('bookGenre').textContent = book.genre[0] || 'General';
+  document.getElementById('bookSummary').textContent = book.summary;
+  document.title = `${book.title} - Book Haven`;
+  
+  // Display mood tags
+  const bookTags = document.getElementById('bookTags');
+  bookTags.innerHTML = '';
+  const moods = getMoodFromGenre(book.genre);
+  moods.forEach(mood => {
+    const tag = document.createElement('div');
+    tag.className = 'tag';
+    tag.textContent = mood;
+    bookTags.appendChild(tag);
+  });
+  
+  // Setup preview button
+  const previewBtn = document.getElementById('previewBtn');
+  if (book.previewLink) {
+    previewBtn.onclick = () => window.open(book.previewLink, '_blank');
+  } else {
+    previewBtn.style.display = 'none';
+  }
+}
+
+// Display similar authors
+function displaySimilarAuthors(book) {
+  const similarAuthors = document.getElementById('similarAuthors');
+  similarAuthors.innerHTML = '';
+  
+  if (book.similarAuthors && book.similarAuthors.length > 0) {
+    book.similarAuthors.slice(0, 3).forEach(author => {
+      const authorTag = document.createElement('div');
+      authorTag.className = 'author-tag';
+      authorTag.textContent = author;
+      authorTag.addEventListener('click', () => {
+        window.location.href = `books.html?search=${encodeURIComponent(`inauthor:"${author}"`)}`;
+      });
+      similarAuthors.appendChild(authorTag);
+    });
+  }
+}
+
+// Display similar books
+function displaySimilarBooks(books) {
+  const similarGrid = document.getElementById('similarBooks');
+  similarGrid.innerHTML = '';
+  
+  books.forEach(book => {
+    const volumeInfo = book.volumeInfo;
+    const similarBookElement = document.createElement('div');
+    similarBookElement.className = 'similar-book';
+    similarBookElement.innerHTML = `
+      <img src="${volumeInfo.imageLinks ? volumeInfo.imageLinks.thumbnail.replace('http://', 'https://') : 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80'}" 
+           alt="${volumeInfo.title}" 
+           onerror="this.src='https://images.unsplash.com/photo-1544947950-fa07a98d237f?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80'">
+      <div class="similar-title">${volumeInfo.title}</div>
+    `;
+    similarBookElement.addEventListener('click', () => {
+      window.location.href = `book.html?id=${book.id}&title=${encodeURIComponent(volumeInfo.title)}`;
+    });
+    similarGrid.appendChild(similarBookElement);
+  });
+}
+
+// Helper function to assign moods based on genres
+function getMoodFromGenre(genres) {
+  if (!genres) return ['general'];
+  
+  const genreMoodMap = {
+    'fiction': ['thoughtful', 'engaging'],
+    'mystery': ['mysterious', 'suspenseful'],
+    'romance': ['romantic', 'emotional'],
+    'fantasy': ['adventurous', 'imaginative'],
+    'science fiction': ['thoughtful', 'futuristic'],
+    'biography': ['inspiring', 'thoughtful'],
+    'history': ['educational', 'thoughtful'],
+    'horror': ['thrilling', 'dark'],
+    'humor': ['funny', 'lighthearted'],
+    'adventure': ['exciting', 'thrilling']
+  };
+  
+  for (const genre of genres) {
+    const lowerGenre = genre.toLowerCase();
+    for (const [key, moods] of Object.entries(genreMoodMap)) {
+      if (lowerGenre.includes(key)) {
+        return moods;
+      }
+    }
+  }
+  
+  return ['general'];
+}
+
+// Check if book is already in reading list
+function checkListStatus() {
+  const readingList = JSON.parse(localStorage.getItem('readingList') || '[]');
+  const btn = document.getElementById('addToListBtn');
+  if (readingList.some(book => book.id === currentBook.id)) {
+    btn.textContent = '✓ Added to Reading List';
+    btn.classList.add('added');
+    btn.disabled = true;
+  }
+}
+
+// Add to reading list
+document.getElementById('addToListBtn').addEventListener('click', () => {
+  let readingList = JSON.parse(localStorage.getItem('readingList') || '[]');
+
+  if (!readingList.some(book => book.id === currentBook.id)) {
+    readingList.push({
+      id: currentBook.id,
+      title: currentBook.title,
+      author: currentBook.author,
+      cover: currentBook.cover,
+      genre: currentBook.genre,
+      rating: currentBook.rating
+    });
+
+    localStorage.setItem('readingList', JSON.stringify(readingList));
+
+    const btn = document.getElementById('addToListBtn');
+    btn.textContent = '✓ Added to Reading List';
+    btn.classList.add('added');
+    btn.disabled = true;
+
+    showToast(`"${currentBook.title}" added to your reading list!`);
+  } else {
+    showToast('This book is already in your reading list!');
+  }
+});
+
+// Toast notification function
+function showToast(message) {
+  const toast = document.getElementById('toast');
+  toast.textContent = message;
+  toast.classList.add('show');
+  
+  setTimeout(() => {
+    toast.classList.remove('show');
+  }, 3000);
+}
+
+// Initialize
+fetchBookDetails(bookId);
+</script>
+
+</body>
+</html>
