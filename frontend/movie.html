@@ -1,68 +1,173 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
+<meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Book Details</title>
-
+<title>Movie Details</title>
 <style>
-/* SAME NEON DARK THEME LIKE YOUR MOVIE PAGE */
-body {
-    margin: 0;
-    font-family: 'Segoe UI';
-    background: #0c0c0c;
-    color: white;
-}
+  body { 
+    margin:0; 
+    font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+    background:#111; 
+    color:white;
+  }
 
-.container {
-    max-width: 900px;
-    margin: auto;
-    padding: 2rem;
-}
+  .hero {
+    position:relative;
+    height:70vh;
+    background-size:cover;
+    background-position:center;
+    display:flex;
+    flex-direction:column;
+    justify-content:flex-end;
+    padding:2rem;
+  }
 
-.cover {
-    width: 300px;
-    border-radius: 15px;
-    box-shadow: 0 0 25px rgba(229,9,20,0.4);
-}
+  .overlay { 
+    position:absolute; 
+    top:0; left:0; 
+    width:100%; height:100%;
+    background:linear-gradient(to top, rgba(17,17,17,1), rgba(17,17,17,0.2));
+  }
+
+  .hero-content { 
+    position:relative; 
+    max-width:800px; 
+    top: 10rem;
+    margin: 0 0 1.5rem 0;
+  }
+
+  .hero h1 { 
+    font-size:3rem; 
+    margin:0; 
+  }
+
+  .hero p { 
+    font-size:1.1rem; 
+    margin:1rem 0; 
+    line-height:1.5; 
+  }
+
+  /* Movie info displayed vertically */
+  .movie-info {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    font-size: 1.1rem;
+    margin-bottom: 2rem;
+  }
+
+  /* Bigger list button */
+  #addToListBtn {
+    padding: 1rem 2rem;
+    font-size: 1.2rem;
+    font-weight: bold;
+    border-radius: 8px;
+    background: rgba(109,109,110,0.9);
+    color:white;
+    border:none;
+    cursor:pointer;
+    transition: transform 0.2s, background 0.2s;
+  }
+
+  #addToListBtn:hover {
+    background: rgba(200,200,200,0.2);
+    transform: scale(1.05);
+  }
+
+  .details { 
+    padding:2rem; 
+    max-width:800px; 
+    margin:auto; 
+  }
 </style>
 </head>
-
 <body>
 
-<div class="container">
+<div class="hero" id="hero">
+  <div class="overlay"></div>
+  <div class="hero-content">
     <h1 id="title"></h1>
-    <img id="cover" class="cover"/>
+    <p id="overview"></p>
 
-    <h3>Description</h3>
-    <p id="desc"></p>
+    <div class="movie-info">
+      <span><strong>Release Date:</strong> <span id="date"></span></span>
+      <span><strong>Rating:</strong> <span id="rating"></span>/10</span>
+      <span><strong>Genres:</strong> <span id="genres"></span></span>
+    </div>
 
-    <h3>Authors</h3>
-    <p id="authors"></p>
+    <button id="addToListBtn">+ My List</button>
+  </div>
+</div>
 
-    <h3>Published</h3>
-    <p id="date"></p>
+<div class="details">
+  <!-- Additional info if needed -->
 </div>
 
 <script>
-// Extract ID from URL
-const id = new URLSearchParams(window.location.search).get("id");
+const apiKey='8b3f92d668511fcfa25cb8b8681becc8';
+const imageBase='https://image.tmdb.org/t/p/original';
 
-async function loadBook() {
-    const res = await fetch("https://www.googleapis.com/books/v1/volumes/" + id);
-    const book = await res.json();
-    const info = book.volumeInfo;
+const params = new URLSearchParams(window.location.search);
+const movieId = params.get('id');
 
-    document.getElementById("title").textContent = info.title;
-    document.getElementById("desc").innerHTML = info.description || "No description";
-    document.getElementById("authors").textContent = info.authors ? info.authors.join(", ") : "Unknown";
-    document.getElementById("date").textContent = info.publishedDate || "N/A";
+let currentMovie = null;
 
-    document.getElementById("cover").src =
-        info.imageLinks ? info.imageLinks.thumbnail : "";
+// Fetch movie details
+async function fetchMovieDetails(id){
+  const res = await fetch(`https://api.themoviedb.org/3/movie/${id}?api_key=${apiKey}&language=en-US`);
+  const movie = await res.json();
+  currentMovie = movie;
+  displayMovie(movie);
+  checkListStatus();
 }
 
-loadBook();
+// Display movie info
+function displayMovie(movie){
+  document.getElementById('hero').style.backgroundImage=`url(${imageBase+movie.backdrop_path})`;
+  document.getElementById('title').textContent = movie.title;
+  document.getElementById('overview').textContent = movie.overview;
+  document.getElementById('date').textContent = movie.release_date;
+  document.getElementById('rating').textContent = movie.vote_average;
+  document.getElementById('genres').textContent = movie.genres.map(g=>g.name).join(', ');
+}
+
+// Check if movie is already in watchlist
+function checkListStatus(){
+  const watchlist = JSON.parse(localStorage.getItem('watchlist') || '[]');
+  const btn = document.getElementById('addToListBtn');
+  if(watchlist.some(m => m.id === currentMovie.id)){
+    btn.textContent = 'Added';
+    btn.disabled = true;
+    btn.style.backgroundColor = 'rgba(50,50,50,0.7)';
+  }
+}
+
+// Add to watchlist
+document.getElementById('addToListBtn').addEventListener('click', () => {
+  let watchlist = JSON.parse(localStorage.getItem('watchlist') || '[]');
+
+  if(!watchlist.some(m => m.id === currentMovie.id)){
+
+    watchlist.push({
+      id: currentMovie.id,
+      title: currentMovie.title,
+      poster_path: currentMovie.poster_path,
+      genres: currentMovie.genres ? currentMovie.genres.map(g => g.name) : []
+    });
+
+    localStorage.setItem('watchlist', JSON.stringify(watchlist));
+
+    const btn = document.getElementById('addToListBtn');
+    btn.textContent = 'Added';
+    btn.disabled = true;
+    btn.style.backgroundColor = 'rgba(50,50,50,0.7)';
+
+    alert('Added to your list!');
+  }
+});
+
+fetchMovieDetails(movieId);
 </script>
 
 </body>
