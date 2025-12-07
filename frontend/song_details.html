@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Song Details - Link Lab</title>
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+
+  body {
+    background: linear-gradient(135deg, #0a0a0a 0%, #1a0a2e 50%, #0a0a0a 100%);
+    color: white;
+    min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: 
+      radial-gradient(circle at 20% 80%, rgba(138, 43, 226, 0.15) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, rgba(30, 215, 96, 0.1) 0%, transparent 50%);
+    animation: pulseBackground 8s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  @keyframes pulseBackground {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 0.8; }
+  }
+
+  /* Navbar */
+  .navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.2rem 3rem;
+    background: rgba(15, 15, 25, 0.95);
+    backdrop-filter: blur(20px);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    border-bottom: 1px solid rgba(30, 215, 96, 0.3);
+    box-shadow: 0 5px 30px rgba(0, 0, 0, 0.5);
+  }
+
+  .navbar h2 {
+    margin: 0;
+    font-size: 2.2rem;
+    background: linear-gradient(135deg, #1ed760, #8a2be2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 800;
+    letter-spacing: 2px;
+    cursor: pointer;
+  }
+
+  .back-btn {
+    background: rgba(51, 51, 71, 0.8);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 0.8rem 1.5rem;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+  }
+
+  .back-btn:hover {
+    background: rgba(75, 75, 95, 0.9);
+    transform: translateY(-2px);
+    border-color: rgba(30, 215, 96, 0.5);
+    box-shadow: 0 8px 25px rgba(30, 215, 96, 0.2);
+  }
+
+  /* Main Content */
+  .container {
+    max-width: 1200px;
+    margin: 3rem auto;
+    padding: 2rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  .song-details-wrapper {
+    display: grid;
+    grid-template-columns: 400px 1fr;
+    gap: 3rem;
+    background: rgba(30, 30, 50, 0.8);
+    backdrop-filter: blur(20px);
+    border-radius: 20px;
+    padding: 3rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  }
+
+  .album-art-section {
+    position: relative;
+  }
+
+  .album-art {
+    width: 100%;
+    height: 400px;
+    border-radius: 16px;
+    object-fit: cover;
+    box-shadow: 0 20px 50px rgba(30, 215, 96, 0.3);
+    transition: transform 0.3s ease;
+  }
+
+  .album-art:hover {
+    transform: scale(1.05);
+  }
+
+  .play-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #1ed760, #1db954);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 10px 30px rgba(30, 215, 96, 0.6);
+  }
+
+  .play-overlay:hover {
+    transform: translate(-50%, -50%) scale(1.2);
+    box-shadow: 0 15px 40px rgba(30, 215, 96, 0.8);
+  }
+
+  .play-overlay::after {
+    content: '▶';
+    margin-left: 5px;
+  }
+
+  .info-section {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .song-header h1 {
+    font-size: 3rem;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(135deg, #1ed760, #8a2be2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .song-header h2 {
+    font-size: 1.8rem;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 500;
+    margin-bottom: 1rem;
+  }
+
+  .genre-tag {
+    display: inline-block;
+    background: linear-gradient(135deg, #8a2be2, #6a0dad);
+    padding: 0.6rem 1.2rem;
+    border-radius: 25px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 2rem;
+  }
+
+  .song-info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+    margin: 2rem 0;
+  }
+
+  .info-item {
+    background: rgba(20, 20, 40, 0.6);
+    padding: 1.2rem;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .info-label {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 0.5rem;
+  }
+
+  .info-value {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #1ed760;
+  }
+
+  .action-buttons {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+  }
+
+  .btn {
+    flex: 1;
+    padding: 1rem 2rem;
+    border: none;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #1ed760, #1db954);
+    color: white;
+    box-shadow: 0 8px 25px rgba(30, 215, 96, 0.4);
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 15px 35px rgba(30, 215, 96, 0.6);
+  }
+
+  .btn-secondary {
+    background: linear-gradient(135deg, #8a2be2, #6a0dad);
+    color: white;
+    box-shadow: 0 8px 25px rgba(138, 43, 226, 0.4);
+  }
+
+  .btn-secondary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 15px 35px rgba(138, 43, 226, 0.6);
+  }
+
+  .btn-outline {
+    background: transparent;
+    color: white;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+  }
+
+  .btn-outline:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: #1ed760;
+  }
+
+  /* Audio Player */
+  .audio-player {
+    margin-top: 2rem;
+    background: rgba(20, 20, 40, 0.8);
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid rgba(30, 215, 96, 0.3);
+  }
+
+  .audio-player audio {
+    width: 100%;
+    height: 50px;
+    border-radius: 8px;
+  }
+
+  /* Lyrics Section */
+  .lyrics-section {
+    margin-top: 3rem;
+    background: rgba(30, 30, 50, 0.8);
+    backdrop-filter: blur(20px);
+    border-radius: 20px;
+    padding: 2rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .lyrics-section h3 {
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+    color: #1ed760;
+  }
+
+  .lyrics-content {
+    line-height: 2;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 1.1rem;
+  }
+
+  /* Modal for recommendations */
+  .modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    z-index: 10000;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal.active {
+    display: flex;
+  }
+
+  .modal-content {
+    background: linear-gradient(135deg, rgba(30, 30, 50, 0.95), rgba(20, 20, 40, 0.95));
+    padding: 3rem;
+    border-radius: 20px;
+    max-width: 500px;
+    width: 90%;
+    border: 1px solid rgba(30, 215, 96, 0.3);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+    text-align: center;
+  }
+
+  .modal-content h2 {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, #1ed760, #8a2be2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .modal-content p {
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 2rem;
+    line-height: 1.6;
+  }
+
+  .modal-buttons {
+    display: flex;
+    gap: 1rem;
+  }
+
+  .notification {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background: linear-gradient(135deg, #1ed760, #1db954);
+    color: white;
+    padding: 1rem 2rem;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(30, 215, 96, 0.5);
+    z-index: 10001;
+    font-weight: 600;
+    animation: slideIn 0.3s ease;
+  }
+
+  @keyframes slideIn {
+    from {
+      transform: translateX(400px);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  /* Responsive */
+  @media (max-width: 968px) {
+    .song-details-wrapper {
+      grid-template-columns: 1fr;
+      gap: 2rem;
+      padding: 2rem;
+    }
+
+    .album-art {
+      height: 300px;
+    }
+
+    .song-header h1 {
+      font-size: 2rem;
+    }
+
+    .song-header h2 {
+      font-size: 1.3rem;
+    }
+
+    .action-buttons {
+      flex-direction: column;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .navbar {
+      padding: 1rem 1.5rem;
+    }
+
+    .container {
+      padding: 1rem;
+    }
+
+    .song-info-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="navbar">
+  <h2 onclick="window.location.href='song.html'">🎵 Link Lab</h2>
+  <a href="song.html" class="back-btn">← Back to Browse</a>
+</div>
+
+<div class="container">
+  <div class="song-details-wrapper">
+    <div class="album-art-section">
+      <img id="albumArt" class="album-art" src="" alt="Album Art">
+      <div class="play-overlay" onclick="playPreview()"></div>
+    </div>
+
+    <div class="info-section">
+      <div class="song-header">
+        <h1 id="songTitle">Loading...</h1>
+        <h2 id="artistName">Artist</h2>
+        <span class="genre-tag" id="genreTag">Genre</span>
+      </div>
+
+      <div class="song-info-grid">
+        <div class="info-item">
+          <div class="info-label">Album</div>
+          <div class="info-value" id="albumName">-</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Release Date</div>
+          <div class="info-value" id="releaseDate">-</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Duration</div>
+          <div class="info-value" id="duration">-</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Price</div>
+          <div class="info-value" id="price">-</div>
+        </div>
+      </div>
+
+      <div class="audio-player">
+        <audio id="audioPlayer" controls>
+          <source id="audioSource" src="" type="audio/mpeg">
+          Your browser does not support the audio element.
+        </audio>
+      </div>
+
+      <div class="action-buttons">
+        <button class="btn btn-primary" onclick="addToPlaylist()">
+          ➕ Add to Playlist
+        </button>
+        <button class="btn btn-secondary" onclick="showRecommendModal()">
+          ⭐ Add to Recommendations
+        </button>
+        <button class="btn btn-outline" onclick="shareSong()">
+          🔗 Share
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="lyrics-section">
+    <h3>About This Track</h3>
+    <div class="lyrics-content" id="aboutContent">
+      This is a preview of the track. Full version available on iTunes and other streaming platforms.
+    </div>
+  </div>
+</div>
+
+<!-- Recommendation Modal -->
+<div class="modal" id="recommendModal">
+  <div class="modal-content">
+    <h2>Add to Recommendations</h2>
+    <p>Adding this song will help us personalize your music recommendations based on the genre and artist preferences.</p>
+    <div class="modal-buttons">
+      <button class="btn btn-primary" onclick="confirmAddToRecommendations()">
+        ✓ Confirm
+      </button>
+      <button class="btn btn-outline" onclick="closeModal()">
+        Cancel
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API_BASE = 'https://itunes.apple.com';
+let currentSong = null;
+
+// Get song ID from URL
+const urlParams = new URLSearchParams(window.location.search);
+const songId = urlParams.get('id');
+
+// Load song details
+async function loadSongDetails() {
+  if (!songId) {
+    alert('Song not found!');
+    window.location.href = 'song.html';
+    return;
+  }
+
+  // First try to get from localStorage
+  const currentSongs = JSON.parse(localStorage.getItem('currentSongs') || '[]');
+  currentSong = currentSongs.find(s => s.id == songId);
+
+  if (currentSong) {
+    displaySongDetails(currentSong);
+  } else {
+    // If not in localStorage, fetch from API
+    try {
+      const response = await fetch(`${API_BASE}/lookup?id=${songId}&entity=song`);
+      const data = await response.json();
+      
+      if (data.results && data.results.length > 0) {
+        const track = data.results[0];
+        currentSong = {
+          id: track.trackId,
+          title: track.trackName,
+          artist: track.artistName,
+          album: track.collectionName,
+          cover: track.artworkUrl100.replace('100x100', '600x600'),
+          preview: track.previewUrl,
+          genre: track.primaryGenreName || 'Music',
+          price: track.trackPrice,
+          releaseDate: track.releaseDate,
+          duration: track.trackTimeMillis
+        };
+        displaySongDetails(currentSong);
+      } else {
+        alert('Song details not found!');
+        window.location.href = 'song.html';
+      }
+    } catch (error) {
+      console.error('Error fetching song details:', error);
+      alert('Failed to load song details.');
+      window.location.href = 'song.html';
+    }
+  }
+}
+
+// Display song details
+function displaySongDetails(song) {
+  document.getElementById('songTitle').textContent = song.title;
+  document.getElementById('artistName').textContent = song.artist;
+  document.getElementById('genreTag').textContent = song.genre;
+  document.getElementById('albumName').textContent = song.album || 'Unknown Album';
+  document.getElementById('albumArt').src = song.cover;
+  document.getElementById('albumArt').alt = song.title;
+
+  // Format release date
+  if (song.releaseDate) {
+    const date = new Date(song.releaseDate);
+    document.getElementById('releaseDate').textContent = date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  }
+
+  // Format duration
+  if (song.duration) {
+    const minutes = Math.floor(song.duration / 60000);
+    const seconds = Math.floor((song.duration % 60000) / 1000);
+    document.getElementById('duration').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  }
+
+  // Price
+  document.getElementById('price').textContent = song.price ? `$${song.price}` : 'Free Preview';
+
+  // Audio player
+  if (song.preview) {
+    document.getElementById('audioSource').src = song.preview;
+    document.getElementById('audioPlayer').load();
+  }
+
+  // Update about section
+  document.getElementById('aboutContent').innerHTML = `
+    <strong>${song.title}</strong> by <strong>${song.artist}</strong> is a ${song.genre} track from the album <strong>${song.album}</strong>. 
+    <br><br>
+    Experience the full version on iTunes and other major streaming platforms. This preview showcases the quality and style of the track.
+  `;
+}
+
+// Play preview
+function playPreview() {
+  const audio = document.getElementById('audioPlayer');
+  if (audio.paused) {
+    audio.play();
+    showNotification('♪ Now Playing Preview');
+  } else {
+    audio.pause();
+  }
+}
+
+// Add to playlist
+function addToPlaylist() {
+  if (!currentSong) return;
+
+  let playlist = JSON.parse(localStorage.getItem('playlist') || '[]');
+  
+  if (playlist.find(s => s.id === currentSong.id)) {
+    showNotification('⚠️ Already in your playlist!');
+    return;
+  }
+  
+  playlist.push(currentSong);
+  localStorage.setItem('playlist', JSON.stringify(playlist));
+  showNotification('✓ Added to Playlist!');
+}
+
+// Show recommendation modal
+function showRecommendModal() {
+  document.getElementById('recommendModal').classList.add('active');
+}
+
+// Close modal
+function closeModal() {
+  document.getElementById('recommendModal').classList.remove('active');
+}
+
+// Confirm add to recommendations
+function confirmAddToRecommendations() {
+  if (!currentSong) return;
+
+  let recommendations = JSON.parse(localStorage.getItem('recommendations') || '[]');
+  
+  if (recommendations.find(s => s.id === currentSong.id)) {
+    closeModal();
+    showNotification('⚠️ Already in recommendations!');
+    return;
+  }
+  
+  recommendations.push(currentSong);
+  localStorage.setItem('recommendations', JSON.stringify(recommendations));
+  
+  // Also update genre preferences
+  let genrePreferences = JSON.parse(localStorage.getItem('genrePreferences') || '{}');
+  genrePreferences[currentSong.genre] = (genrePreferences[currentSong.genre] || 0) + 1;
+  localStorage.setItem('genrePreferences', JSON.stringify(genrePreferences));
+  
+  closeModal();
+  showNotification('⭐ Added to Recommendations!');
+}
+
+// Share song
+function shareSong() {
+  const shareText = `Check out "${currentSong.title}" by ${currentSong.artist} on LinkLab!`;
+  
+  if (navigator.share) {
+    navigator.share({
+      title: currentSong.title,
+      text: shareText,
+      url: window.location.href
+    }).catch(err => console.log('Share failed:', err));
+  } else {
+    // Fallback: copy to clipboard
+    navigator.clipboard.writeText(window.location.href).then(() => {
+      showNotification('🔗 Link copied to clipboard!');
+    });
+  }
+}
+
+// Show notification
+function showNotification(message) {
+  const notification = document.createElement('div');
+  notification.className = 'notification';
+  notification.textContent = message;
+  document.body.appendChild(notification);
+  
+  setTimeout(() => {
+    notification.remove();
+  }, 3000);
+}
+
+// Initialize
+loadSongDetails();
+</script>
+
+</body>
+</html>
