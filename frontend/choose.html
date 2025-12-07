@@ -227,18 +227,22 @@
                 <option value="Sports">Sports</option>
             </select>
         </div>
+<div class="form-group">
+    <label for="genre">Favorite Music Genre</label>
+    <select id="genre" required>
+        <option value="">--Select--</option>
+        <option value="pop">Pop</option>
+        <option value="rock">Rock</option>
+        <option value="hiphop">Hip-Hop</option>
+        <option value="jazz">Jazz</option>
+        <option value="classical">Classical</option>
+        <option value="country">Country</option>
+        <option value="electronic">Electronic</option>
+        <option value="rnb">R&B / Soul</option>
+        <option value="kpop">K-Pop</option>
+    </select>
+</div>
 
-        <div class="form-group">
-            <label for="jobs">Favorite Job Sector</label>
-            <select id="jobs" required>
-                <option value="">--Select--</option>
-                <option value="IT">IT</option>
-                <option value="Healthcare">Healthcare</option>
-                <option value="Finance">Finance</option>
-                <option value="Education">Education</option>
-                <option value="Marketing">Marketing</option>
-            </select>
-        </div>
 
         <button type="submit" class="btn">Save Preferences</button>
     </form>
@@ -264,7 +268,7 @@
 
         const movies = document.getElementById('movies').value;
         const shopping = document.getElementById('shopping').value;
-        const jobs = document.getElementById('jobs').value;
+        const music = document.getElementById('music').value;
 
         // Update user's preferences
         const userIndex = users.findIndex(u => u.username === currentUser);
@@ -272,7 +276,7 @@
             users[userIndex].preferences = {
                 movies,
                 shopping,
-                jobs
+                music
             };
             localStorage.setItem("users", JSON.stringify(users));
             alert("Preferences saved successfully!");
