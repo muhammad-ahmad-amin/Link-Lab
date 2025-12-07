@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Graph-Based Shopping Recommendation System</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a0a2e 0%, #2d1b4e 50%, #1a0a2e 100%);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(26, 10, 46, 0.7);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(168, 85, 247, 0.3);
+        }
+
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #a855f7, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            max-width: 800px;
+            margin: 0 auto;
+            color: #c4b5fd;
+        }
+
+        .content {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .panel {
+            flex: 1;
+            min-width: 300px;
+            background: rgba(40, 20, 60, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(168, 85, 247, 0.2);
+        }
+
+        .panel-title {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid rgba(168, 85, 247, 0.3);
+            color: #a855f7;
+        }
+
+        #graph-container {
+            height: 500px;
+            width: 100%;
+            background: rgba(26, 10, 46, 0.5);
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+            border: 1px solid rgba(168, 85, 247, 0.2);
+        }
+
+        .user-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .user-select {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        select, button {
+            padding: 12px 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            background: rgba(51, 30, 80, 0.8);
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        select {
+            flex: 1;
+        }
+
+        button {
+            background: linear-gradient(135deg, #a855f7, #ec4899);
+            color: white;
+            border: none;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(138, 43, 226, 0.3);
+        }
+
+        .recommendations {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .product-card {
+            background: rgba(51, 30, 80, 0.6);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(168, 85, 247, 0.2);
+            cursor: pointer;
+        }
+
+        .product-card:hover {
+            transform: translateY(-5px);
+            background: rgba(168, 85, 247, 0.2);
+            box-shadow: 0 5px 15px rgba(138, 43, 226, 0.3);
+        }
+
+        .product-image {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            background: #2d1b4e;
+        }
+
+        .product-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+            color: white;
+            height: 40px;
+            overflow: hidden;
+        }
+
+        .product-price {
+            color: #a855f7;
+            font-weight: bold;
+            font-size: 1rem;
+            margin-bottom: 5px;
+        }
+
+        .product-rating {
+            color: #fbbf24;
+            font-size: 0.8rem;
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.9rem;
+            color: #c4b5fd;
+        }
+
+        .legend-color {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+        }
+
+        .node-info {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(26, 10, 46, 0.5);
+            border-radius: 10px;
+            border: 1px solid rgba(168, 85, 247, 0.2);
+        }
+
+        .algorithm-info {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(26, 10, 46, 0.5);
+            border-radius: 10px;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: #c4b5fd;
+            border: 1px solid rgba(168, 85, 247, 0.2);
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: rgba(168, 85, 247, 0.2);
+            border-radius: 4px;
+            margin: 15px 0;
+            overflow: hidden;
+        }
+
+        .progress {
+            height: 100%;
+            background: linear-gradient(90deg, #a855f7, #ec4899);
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: #c4b5fd;
+        }
+
+        .highlight {
+            color: #a855f7;
+            font-weight: bold;
+        }
+
+        .graph-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .graph-btn {
+            background: rgba(168, 85, 247, 0.3);
+            padding: 8px 12px;
+            font-size: 0.9rem;
+            border: 1px solid rgba(168, 85, 247, 0.4);
+        }
+
+        .graph-btn:hover {
+            background: rgba(168, 85, 247, 0.5);
+        }
+
+        .spinner {
+            border: 6px solid rgba(168, 85, 247, 0.3);
+            border-top: 6px solid #a855f7;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            margin: 0 auto;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .cart-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: rgba(26, 10, 46, 0.5);
+            border-radius: 8px;
+            border: 1px solid rgba(168, 85, 247, 0.2);
+        }
+
+        .cart-icon {
+            font-size: 1.5rem;
+            color: #a855f7;
+        }
+
+        .cart-stats {
+            flex: 1;
+        }
+
+        .cart-stats h4 {
+            margin-bottom: 5px;
+            color: #a855f7;
+        }
+
+        .cart-stats p {
+            font-size: 0.9rem;
+            color: #c4b5fd;
+        }
+
+        .back-btn {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.4);
+        }
+
+        .back-btn:hover {
+            background: rgba(239, 68, 68, 0.3);
+        }
+
+        .add-to-cart-btn {
+            background: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+            border: 1px solid rgba(34, 197, 94, 0.4);
+            margin-top: 8px;
+            padding: 6px 12px;
+            font-size: 0.8rem;
+        }
+
+        .add-to-cart-btn:hover {
+            background: rgba(34, 197, 94, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Graph-Based Shopping Recommendation System</h1>
+            <p class="subtitle">Explore how graph algorithms provide personalized product recommendations based on your shopping patterns and preferences.</p>
+        </header>
+
+        <div class="content">
+            <div class="panel">
+                <h2 class="panel-title">Shopping Preference Graph</h2>
+                <div id="graph-container"></div>
+                <div class="graph-controls">
+                    <button class="graph-btn" id="zoom-in">Zoom In</button>
+                    <button class="graph-btn" id="zoom-out">Zoom Out</button>
+                    <button class="graph-btn" id="reset-view">Reset View</button>
+                    <button class="graph-btn" id="refresh-graph">Refresh Graph</button>
+                </div>
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: #a855f7;"></div>
+                        <span>Current Product</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: #2196F3;"></div>
+                        <span>Similar Products</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: #10b981;"></div>
+                        <span>Category Nodes</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: #f59e0b;"></div>
+                        <span>Recommended Products</span>
+                    </div>
+                </div>
+                <div class="node-info">
+                    <h3>Node Information</h3>
+                    <p>Click on any node to see product details here.</p>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="cart-info">
+                    <div class="cart-icon">🛒</div>
+                    <div class="cart-stats">
+                        <h4>Your Shopping Profile</h4>
+                        <p>Based on your cart and browsing history</p>
+                    </div>
+                    <button class="back-btn" onclick="window.history.back()">← Back to Shop</button>
+                </div>
+
+                <div class="user-controls">
+                    <div class="user-select">
+                        <select id="categoryFilter">
+                            <option value="">All Categories</option>
+                        </select>
+                        <button id="applyFilter">Filter</button>
+                    </div>
+                    <div class="user-select">
+                        <select id="algorithmSelect">
+                            <option value="collaborative">Collaborative Filtering</option>
+                            <option value="content">Content-Based Filtering</option>
+                            <option value="hybrid">Hybrid Approach</option>
+                        </select>
+                        <button id="runAlgorithm">Run Algorithm</button>
+                    </div>
+                </div>
+
+                <div id="loader" style="display:none; text-align:center; margin-top:20px;">
+                    <div class="spinner"></div>
+                    <p>Analyzing your shopping patterns...</p>
+                </div>
+
+                <h2 class="panel-title">Recommended Products</h2>
+                <div class="recommendations" id="recommendations-container">
+                    <!-- Product recommendations will appear here -->
+                </div>
+
+                <div class="algorithm-info">
+                    <h4>How This Works:</h4>
+                    <p>Our system analyzes your shopping behavior using graph algorithms to find patterns and similarities between products. It creates connections between items you've shown interest in and suggests products that are frequently bought together by similar users.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let nodes = [];
+        let links = [];
+        let simulation;
+        let zoom = d3.zoom();
+        let svg, g;
+        let allProducts = [];
+        let cartProducts = [];
+
+        // Initialize the graph
+        function initGraph() {
+            const container = document.getElementById('graph-container');
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+
+            // Clear any existing SVG
+            d3.select("#graph-container svg").remove();
+
+            // Create SVG
+            svg = d3.select("#graph-container")
+                .append("svg")
+                .attr("width", width)
+                .attr("height", height);
+
+            // Create a group for zooming
+            g = svg.append("g");
+
+            // Create groups for links and nodes
+            const linkGroup = g.append("g").attr("class", "links");
+            const nodeGroup = g.append("g").attr("class", "nodes");
+
+            // Set up zoom behavior
+            zoom = d3.zoom()
+                .scaleExtent([0.1, 4])
+                .on("zoom", (event) => {
+                    g.attr("transform", event.transform);
+                });
+
+            svg.call(zoom);
+        }
+
+        // Color scale for node types
+        const colorScale = d3.scaleOrdinal()
+            .domain(["current", "similar", "category", "recommended"])
+            .range(["#a855f7", "#2196F3", "#10b981", "#f59e0b"]);
+
+        // Load products and build graph
+        async function loadProductsAndBuildGraph() {
+            const loader = document.getElementById('loader');
+            loader.style.display = 'block';
+
+            try {
+                // Load cart from localStorage
+                cartProducts = JSON.parse(localStorage.getItem('cart') || '[]');
+                
+                // Load products from DummyJSON API
+                const response = await fetch('https://dummyjson.com/products?limit=50');
+                const data = await response.json();
+                allProducts = data.products;
+
+                // Populate category filter
+                populateCategoryFilter();
+
+                // Build graph
+                await buildGraph();
+
+                // Load recommendations
+                await loadRecommendedProducts();
+
+                loader.style.display = 'none';
+            } catch (error) {
+                console.error('Error loading products:', error);
+                loader.style.display = 'none';
+            }
+        }
+
+        // Populate category filter
+        function populateCategoryFilter() {
+            const categoryFilter = document.getElementById('categoryFilter');
+            const categories = [...new Set(allProducts.map(p => p.category))];
+            
+            categories.forEach(category => {
+                const option = document.createElement('option');
+                option.value = category;
+                option.textContent = category.charAt(0).toUpperCase() + category.slice(1);
+                categoryFilter.appendChild(option);
+            });
+        }
+
+        // Build the graph
+        async function buildGraph() {
+            nodes = [];
+            links = [];
+
+            // Limit number of products for better visualization
+            const displayProducts = allProducts.slice(0, 30);
+
+            // Create nodes for products
+            displayProducts.forEach((product, index) => {
+                const isInCart = cartProducts.some(item => item.title === product.title);
+                nodes.push({
+                    id: `product-${product.id}`,
+                    name: product.title.substring(0, 20) + (product.title.length > 20 ? '...' : ''),
+                    fullName: product.title,
+                    type: isInCart ? "current" : "similar",
+                    category: product.category,
+                    price: product.price,
+                    rating: product.rating,
+                    image: product.thumbnail,
+                    isInCart: isInCart
+                });
+            });
+
+            // Create category nodes
+            const categories = [...new Set(displayProducts.map(p => p.category))];
+            categories.forEach(category => {
+                nodes.push({
+                    id: `category-${category}`,
+                    name: category,
+                    fullName: category,
+                    type: "category",
+                    category: category
+                });
+            });
+
+            // Create links between products and categories
+            displayProducts.forEach(product => {
+                links.push({
+                    source: `product-${product.id}`,
+                    target: `category-${product.category}`,
+                    strength: 1
+                });
+            });
+
+            // Create links between similar products (same category)
+            for (let i = 0; i < displayProducts.length; i++) {
+                for (let j = i + 1; j < displayProducts.length; j++) {
+                    if (displayProducts[i].category === displayProducts[j].category) {
+                        const similarity = Math.random() * 0.8 + 0.2; // Random similarity score
+                        links.push({
+                            source: `product-${displayProducts[i].id}`,
+                            target: `product-${displayProducts[j].id}`,
+                            strength: similarity
+                        });
+                    }
+                }
+            }
+
+            updateGraph();
+        }
+
+        // Update graph visualization
+        function updateGraph() {
+            const container = document.getElementById('graph-container');
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+
+            // Remove old elements
+            g.selectAll(".links line").remove();
+            g.selectAll(".nodes circle").remove();
+            g.selectAll(".nodes text").remove();
+
+            // Links
+            const link = g.select(".links")
+                .selectAll("line")
+                .data(links)
+                .enter()
+                .append("line")
+                .attr("stroke", "rgba(168, 85, 247, 0.4)")
+                .attr("stroke-width", d => d.strength * 3)
+                .attr("stroke-opacity", 0.6);
+
+            // Nodes
+            const node = g.select(".nodes")
+                .selectAll("circle")
+                .data(nodes)
+                .enter()
+                .append("circle")
+                .attr("r", d => {
+                    if (d.type === "category") return 15;
+                    if (d.type === "current") return 12;
+                    return 10;
+                })
+                .attr("fill", d => colorScale(d.type))
+                .attr("stroke", "#fff")
+                .attr("stroke-width", 2)
+                .call(
+                    d3.drag()
+                        .on("start", dragStarted)
+                        .on("drag", dragged)
+                        .on("end", dragEnded)
+                )
+                .on("click", function(event, d) {
+                    showNodeInfo(d);
+                    highlightConnections(d.id);
+                });
+
+            // Labels
+            const label = g.select(".nodes")
+                .selectAll("text")
+                .data(nodes)
+                .enter()
+                .append("text")
+                .text(d => d.name)
+                .attr("font-size", d => d.type === "category" ? "12px" : "10px")
+                .attr("dx", 15)
+                .attr("dy", 4)
+                .attr("fill", "white");
+
+            // Force Simulation
+            simulation = d3.forceSimulation(nodes)
+                .force("link", d3.forceLink(links)
+                    .id(d => d.id)
+                    .distance(l => 100 + (1 - l.strength) * 100)
+                )
+                .force("charge", d3.forceManyBody().strength(-200))
+                .force("center", d3.forceCenter(width / 2, height / 2))
+                .force("collision", d3.forceCollide().radius(20))
+                .alpha(0.8)
+                .alphaDecay(0.02)
+                .on("tick", ticked);
+
+            function ticked() {
+                link
+                    .attr("x1", d => d.source.x || 0)
+                    .attr("y1", d => d.source.y || 0)
+                    .attr("x2", d => d.target.x || 0)
+                    .attr("y2", d => d.target.y || 0);
+
+                node
+                    .attr("cx", d => d.x || 0)
+                    .attr("cy", d => d.y || 0);
+
+                label
+                    .attr("x", d => (d.x || 0) + 15)
+                    .attr("y", d => d.y || 0);
+            }
+
+            // Set initial zoom
+            svg.call(
+                zoom.transform,
+                d3.zoomIdentity
+                    .translate(width / 2, height / 2)
+                    .scale(0.5)
+            );
+        }
+
+        // Drag functions
+        function dragStarted(event, d) {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            d.fx = d.x;
+            d.fy = d.y;
+        }
+
+        function dragged(event, d) {
+            d.fx = event.x;
+            d.fy = event.y;
+        }
+
+        function dragEnded(event, d) {
+            if (!event.active) simulation.alphaTarget(0);
+            d.fx = null;
+            d.fy = null;
+        }
+
+        // Show node information
+        function showNodeInfo(node) {
+            const nodeInfo = document.querySelector('.node-info');
+            
+            if (node.type === "category") {
+                nodeInfo.innerHTML = `
+                    <h3>Category Information</h3>
+                    <p><strong>Category:</strong> ${node.name}</p>
+                    <p><strong>Products:</strong> ${allProducts.filter(p => p.category === node.name).length}</p>
+                    <p><strong>Type:</strong> Category Node</p>
+                `;
+            } else {
+                nodeInfo.innerHTML = `
+                    <h3>Product Information</h3>
+                    <p><strong>Product:</strong> ${node.fullName}</p>
+                    <p><strong>Category:</strong> ${node.category}</p>
+                    <p><strong>Price:</strong> $${node.price}</p>
+                    <p><strong>Rating:</strong> ⭐ ${node.rating || 'N/A'}</p>
+                    <p><strong>Status:</strong> ${node.isInCart ? 'In Your Cart' : 'Not in Cart'}</p>
+                    <button class="add-to-cart-btn" onclick="addToCartFromGraph('${node.fullName}', ${node.price})">
+                        ${node.isInCart ? '✓ In Cart' : 'Add to Cart'}
+                    </button>
+                `;
+            }
+        }
+
+        // Highlight connections
+        function highlightConnections(nodeId) {
+            // Reset all
+            g.selectAll("circle")
+                .attr("stroke", "#fff")
+                .attr("stroke-width", 2);
+
+            g.selectAll("line")
+                .attr("stroke", "rgba(168, 85, 247, 0.4)")
+                .attr("stroke-width", d => d.strength * 3);
+
+            // Find connections
+            const connectedLinks = links.filter(l => 
+                l.source.id === nodeId || l.target.id === nodeId
+            );
+
+            // Highlight connected nodes
+            const connectedNodeIds = new Set();
+            connectedLinks.forEach(link => {
+                connectedNodeIds.add(link.source.id);
+                connectedNodeIds.add(link.target.id);
+            });
+
+            // Highlight connected nodes
+            g.selectAll("circle")
+                .filter(d => connectedNodeIds.has(d.id))
+                .attr("stroke", "#fbbf24")
+                .attr("stroke-width", 3);
+
+            // Highlight connecting links
+            g.selectAll("line")
+                .filter(d => d.source.id === nodeId || d.target.id === nodeId)
+                .attr("stroke", "#f59e0b")
+                .attr("stroke-width", 4);
+        }
+
+        // Load recommended products
+        async function loadRecommendedProducts() {
+            const loader = document.getElementById('loader');
+            loader.style.display = 'block';
+
+            // Get cart categories
+            const cartCategories = [...new Set(cartProducts.map(item => item.category))];
+            
+            // If no cart, use all categories
+            const categoriesToUse = cartCategories.length > 0 ? cartCategories : 
+                ['smartphones', 'laptops', 'fragrances', 'skincare', 'groceries'];
+
+            // Fetch products from these categories
+            let recommendedProducts = [];
+            
+            for (const category of categoriesToUse) {
+                try {
+                    const response = await fetch(`https://dummyjson.com/products/category/${category}?limit=10`);
+                    const data = await response.json();
+                    
+                    // Filter out products already in cart
+                    const filteredProducts = data.products.filter(product => 
+                        !cartProducts.some(item => item.title === product.title)
+                    );
+                    
+                    recommendedProducts = [...recommendedProducts, ...filteredProducts];
+                } catch (error) {
+                    console.error(`Error fetching category ${category}:`, error);
+                }
+            }
+
+            // Remove duplicates and limit to 12
+            recommendedProducts = Array.from(new Map(recommendedProducts.map(p => [p.id, p])).values())
+                .slice(0, 12);
+
+            displayRecommendations(recommendedProducts);
+            
+            // Update node types for recommended products
+            recommendedProducts.forEach(product => {
+                const nodeIndex = nodes.findIndex(n => n.id === `product-${product.id}`);
+                if (nodeIndex !== -1) {
+                    nodes[nodeIndex].type = "recommended";
+                }
+            });
+
+            updateGraph();
+            loader.style.display = 'none';
+        }
+
+        // Display recommendations
+        function displayRecommendations(products) {
+            const container = document.getElementById('recommendations-container');
+            container.innerHTML = '';
+
+            products.forEach(product => {
+                const card = document.createElement('div');
+                card.className = 'product-card';
+                card.innerHTML = `
+                    <img class="product-image" src="${product.thumbnail}" alt="${product.title}" 
+                         onerror="this.src='https://via.placeholder.com/150x100/2d1b4e/a855f7?text=Product'">
+                    <div class="product-title">${product.title}</div>
+                    <div class="product-price">$${product.price}</div>
+                    <div class="product-rating">⭐ ${product.rating || 'N/A'}</div>
+                    <button class="add-to-cart-btn" onclick="addToCart('${product.id}', '${product.title}', ${product.price}, '${product.thumbnail}', '${product.category}')">
+                        Add to Cart
+                    </button>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // Add to cart function
+        function addToCart(productId, title, price, image, category) {
+            let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+            
+            const existingItem = cart.find(item => item.id === productId);
+            
+            if (existingItem) {
+                existingItem.quantity = (existingItem.quantity || 1) + 1;
+            } else {
+                cart.push({
+                    id: productId,
+                    title: title,
+                    price: `$${price}`,
+                    image: image,
+                    quantity: 1,
+                    category: category
+                });
+            }
+            
+            localStorage.setItem('cart', JSON.stringify(cart));
+            
+            // Show success message
+            alert('Product added to cart!');
+            
+            // Refresh cart
+            cartProducts = cart;
+        }
+
+        // Add to cart from graph
+        function addToCartFromGraph(title, price) {
+            const product = allProducts.find(p => p.title === title);
+            if (product) {
+                addToCart(product.id, product.title, product.price, product.thumbnail, product.category);
+            }
+        }
+
+        // Event Listeners
+        document.getElementById('applyFilter').addEventListener('click', function() {
+            const category = document.getElementById('categoryFilter').value;
+            filterRecommendations(category);
+        });
+
+        document.getElementById('runAlgorithm').addEventListener('click', function() {
+            const algorithm = document.getElementById('algorithmSelect').value;
+            runAlgorithm(algorithm);
+        });
+
+        document.getElementById('refresh-graph').addEventListener('click', function() {
+            loadProductsAndBuildGraph();
+        });
+
+        document.getElementById('zoom-in').addEventListener('click', function() {
+            svg.transition().duration(750).call(zoom.scaleBy, 1.5);
+        });
+
+        document.getElementById('zoom-out').addEventListener('click', function() {
+            svg.transition().duration(750).call(zoom.scaleBy, 0.75);
+        });
+
+        document.getElementById('reset-view').addEventListener('click', function() {
+            const container = document.getElementById('graph-container');
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+            
+            svg.transition().duration(750).call(
+                zoom.transform,
+                d3.zoomIdentity
+                    .translate(width / 2, height / 2)
+                    .scale(0.5)
+            );
+        });
+
+        // Filter recommendations by category
+        function filterRecommendations(category) {
+            const filteredProducts = category ? 
+                allProducts.filter(p => p.category === category) : 
+                allProducts;
+            
+            const limitedProducts = filteredProducts.slice(0, 12);
+            displayRecommendations(limitedProducts);
+        }
+
+        // Run different algorithms
+        async function runAlgorithm(algorithm) {
+            const loader = document.getElementById('loader');
+            loader.style.display = 'block';
+
+            // Simulate algorithm processing
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            let recommendedProducts = [];
+            
+            switch(algorithm) {
+                case 'collaborative':
+                    // Collaborative filtering: products similar to what's in cart
+                    recommendedProducts = getCollaborativeRecommendations();
+                    break;
+                case 'content':
+                    // Content-based: products in same categories
+                    recommendedProducts = getContentBasedRecommendations();
+                    break;
+                case 'hybrid':
+                    // Hybrid: mix of both
+                    recommendedProducts = getHybridRecommendations();
+                    break;
+            }
+
+            displayRecommendations(recommendedProducts.slice(0, 12));
+            loader.style.display = 'none';
+        }
+
+        // Algorithm implementations
+        function getCollaborativeRecommendations() {
+            // Simple collaborative filtering simulation
+            const popularProducts = allProducts
+                .sort((a, b) => (b.rating || 0) - (a.rating || 0))
+                .slice(0, 20);
+            
+            return popularProducts.filter(p => 
+                !cartProducts.some(item => item.title === p.title)
+            );
+        }
+
+        function getContentBasedRecommendations() {
+            // Content-based filtering based on cart categories
+            const cartCategories = [...new Set(cartProducts.map(item => item.category))];
+            
+            if (cartCategories.length === 0) {
+                return allProducts.slice(0, 20);
+            }
+            
+            return allProducts
+                .filter(p => cartCategories.includes(p.category))
+                .filter(p => !cartProducts.some(item => item.title === p.title))
+                .slice(0, 20);
+        }
+
+        function getHybridRecommendations() {
+            // Hybrid approach
+            const collaborative = getCollaborativeRecommendations();
+            const contentBased = getContentBasedRecommendations();
+            
+            // Combine and remove duplicates
+            const combined = [...collaborative, ...contentBased];
+            return Array.from(new Map(combined.map(p => [p.id, p])).values())
+                .slice(0, 20);
+        }
+
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            initGraph();
+            updateGraph();
+        });
+
+        // Initialize
+        initGraph();
+        loadProductsAndBuildGraph();
+    </script>
+</body>
+</html>
