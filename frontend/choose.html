@@ -143,67 +143,15 @@
         .btn:active {
             transform: translateY(0);
         }
-        
-        .form-icon {
-            position: absolute;
-            right: 16px;
-            top: 38px;
-            color: #95a5a6;
-            pointer-events: none;
-        }
-        
-        .form-footer {
-            text-align: center;
-            margin-top: 2rem;
-            color: #7b8a8b;
-            font-size: 0.9rem;
-        }
-        
-        .form-footer a {
-            color: #3498db;
-            text-decoration: none;
-            font-weight: 500;
-            transition: color 0.3s ease;
-        }
-        
-        .form-footer a:hover {
-            color: #2c3e50;
-            text-decoration: underline;
-        }
-        
-        .decorative-element {
-            position: absolute;
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, rgba(52, 152, 219, 0.05) 0%, rgba(44, 62, 80, 0.05) 100%);
-            z-index: -1;
-        }
-        
-        .decorative-element:nth-child(1) {
-            top: -40px;
-            right: -40px;
-        }
-        
-        .decorative-element:nth-child(2) {
-            bottom: -60px;
-            left: -60px;
-            width: 150px;
-            height: 150px;
-        }
-        
-        @media (max-width: 576px) {
-            .container {
-                padding: 2rem 1.5rem;
-            }
-        }
-    </style>
+</style>
 </head>
 <body>
 
 <div class="container">
     <h2>Choose Your Favorite Categories</h2>
+
     <form id="favoritesForm">
+
         <div class="form-group">
             <label for="movies">Favorite Movie Genre</label>
             <select id="movies" required>
@@ -227,29 +175,28 @@
                 <option value="Sports">Sports</option>
             </select>
         </div>
-<div class="form-group">
-    <label for="genre">Favorite Music Genre</label>
-    <select id="genre" required>
-        <option value="">--Select--</option>
-        <option value="pop">Pop</option>
-        <option value="rock">Rock</option>
-        <option value="hiphop">Hip-Hop</option>
-        <option value="jazz">Jazz</option>
-        <option value="classical">Classical</option>
-        <option value="country">Country</option>
-        <option value="electronic">Electronic</option>
-        <option value="rnb">R&B / Soul</option>
-        <option value="kpop">K-Pop</option>
-    </select>
-</div>
 
+        <div class="form-group">
+            <label for="genre">Favorite Music Genre</label>
+            <select id="genre" required>
+                <option value="">--Select--</option>
+                <option value="pop">Pop</option>
+                <option value="rock">Rock</option>
+                <option value="hiphop">Hip-Hop</option>
+                <option value="jazz">Jazz</option>
+                <option value="classical">Classical</option>
+                <option value="country">Country</option>
+                <option value="electronic">Electronic</option>
+                <option value="rnb">R&B / Soul</option>
+                <option value="kpop">K-Pop</option>
+            </select>
+        </div>
 
         <button type="submit" class="btn">Save Preferences</button>
     </form>
 </div>
 
 <script>
-    // Get the currently signed-in user from cookie
     function getSignedInUser() {
         const name = document.cookie.split('; ').find(row => row.startsWith('signedInUser='));
         return name ? decodeURIComponent(name.split('=')[1]) : null;
@@ -268,19 +215,20 @@
 
         const movies = document.getElementById('movies').value;
         const shopping = document.getElementById('shopping').value;
-        const music = document.getElementById('music').value;
+        const music = document.getElementById('genre').value;  // FIXED ID
 
-        // Update user's preferences
         const userIndex = users.findIndex(u => u.username === currentUser);
+
         if(userIndex !== -1){
             users[userIndex].preferences = {
                 movies,
                 shopping,
                 music
             };
+
             localStorage.setItem("users", JSON.stringify(users));
+
             alert("Preferences saved successfully!");
-            // Redirect to homepage or dashboard
             window.location.href = "../index.html";
         } else {
             alert("User not found!");
