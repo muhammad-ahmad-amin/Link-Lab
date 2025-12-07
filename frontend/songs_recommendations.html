@@ -136,7 +136,6 @@
   #graph-container {
     height: 750px;
     width: 100%;
-    /* Background moved to SVG to prevent stacking issues */
     border-radius: 16px;
     overflow: hidden;
     position: relative;
@@ -152,19 +151,21 @@
     right: 20px;
     width: 280px;
     padding: 20px;
-    background: rgba(10, 10, 20, 0.95); /* Darker background */
+    background: rgba(10, 10, 20, 0.95);
     border-radius: 12px;
     border: 1px solid #1ed760;
     box-shadow: 0 5px 20px rgba(0, 0, 0, 0.8);
-    pointer-events: none; /* Allows clicking through when hidden */
+    pointer-events: none;
     opacity: 0;
-    transition: opacity 0.2s ease-in-out;
-    z-index: 1000; /* Super high Z-Index to stay on top */
+    transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+    transform: translateX(20px);
+    z-index: 1000;
   }
   
   .node-info.active {
     opacity: 1;
-    pointer-events: auto; /* Re-enable clicks on the box itself */
+    transform: translateX(0);
+    pointer-events: auto;
   }
 
   .graph-controls {
@@ -189,6 +190,7 @@
   .graph-btn:hover {
     background: rgba(30, 215, 96, 0.2);
     border-color: #1ed760;
+    transform: translateY(-2px);
   }
 
   .legend {
@@ -312,6 +314,35 @@
 
   @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
   
+  /* Animation classes */
+  .pulse-ring {
+    animation: pulse-ring 2s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite;
+  }
+  
+  @keyframes pulse-ring {
+    0% { transform: scale(0.8); opacity: 0.8; }
+    100% { transform: scale(1.5); opacity: 0; }
+  }
+  
+  .glow {
+    animation: glow 2s ease-in-out infinite alternate;
+  }
+  
+  @keyframes glow {
+    from { filter: drop-shadow(0 0 5px currentColor); }
+    to { filter: drop-shadow(0 0 15px currentColor); }
+  }
+  
+  .float {
+    animation: float 3s ease-in-out infinite;
+  }
+  
+  @keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+    100% { transform: translateY(0px); }
+  }
+  
   @media (max-width: 768px) {
     .charts-grid { grid-template-columns: 1fr; }
     .navbar { flex-direction: column; gap: 1rem; }
@@ -328,7 +359,7 @@
 
 <div class="container">
   <div class="dashboard-header">
-    <h1>📊 Your Music Universe</h1>
+    <h1>Your Music Universe</h1>
     <p>Visualizing the connections between your Genres, Artists, and Songs</p>
   </div>
 
@@ -386,6 +417,7 @@
         <button class="graph-btn" id="zoom-in">➕ Zoom In</button>
         <button class="graph-btn" id="zoom-out">➖ Zoom Out</button>
         <button class="graph-btn" id="toggle-labels">🏷 Toggle Text</button>
+        <button class="graph-btn" id="animate-btn">✨ Toggle Animations</button>
       </div>
 
       <div class="legend">
@@ -448,20 +480,19 @@ let simulation;
 let zoom = d3.zoom();
 let svg, g;
 let showLabels = true;
+let animationsEnabled = true;
+let selectedNode = null;
 
 // ---------------------------------
 // 1. D3 GRAPH LOGIC (FIXED CLICK)
 // ---------------------------------
 function initGraph() {
   const container = document.getElementById('graph-container');
-  // NOTE: Container must be displayed (block) before calculating width
   const width = container.clientWidth;
   const height = container.clientHeight;
 
   d3.select("#graph-container svg").remove();
 
-  // FIX: Using .insert("svg", ":first-child") ensures SVG is the background,
-  // allowing the node-info div (which is regular HTML) to sit ON TOP.
   svg = d3.select("#graph-container")
     .insert("svg", ":first-child")
     .attr("width", width)
@@ -469,13 +500,9 @@ function initGraph() {
     .style("cursor", "grab")
     .style("background", "radial-gradient(circle at center, #1a1a2e 0%, #000000 100%)")
     .on("click", (e) => {
-        // If clicking background, hide info
+        // If clicking background, reset everything
         if(e.target.tagName === 'svg') {
-            document.getElementById('nodeInfo').classList.remove('active');
-            d3.selectAll("circle")
-              .attr("stroke", "#fff")
-              .attr("stroke-width", d => d.group === 'song' ? 0.5 : 2)
-              .style("filter", "none");
+            resetGraph();
         }
     });
 
@@ -506,7 +533,8 @@ function buildGenreGraph(data) {
       name: genre,
       group: 'genre',
       radius: 20 + Math.min(genreCounts[genre], 25),
-      val: genreCounts[genre]
+      val: genreCounts[genre],
+      connectedEdges: 0
     });
   });
 
@@ -518,7 +546,8 @@ function buildGenreGraph(data) {
       name: artist,
       group: 'artist',
       radius: 12,
-      val: artistCounts[artist]
+      val: artistCounts[artist],
+      connectedEdges: 0
     });
     // Link to main genre
     const targetGenre = orderedGenres[idx % orderedGenres.length] || orderedGenres[0];
@@ -530,7 +559,7 @@ function buildGenreGraph(data) {
     });
   });
 
-  // 3. Song Nodes (Visual) - Limit 10 per genre to keep graph clean
+  // 3. Song Nodes (Visual)
   Object.keys(genreCounts).forEach((genre) => {
     const count = Math.min(genreCounts[genre], 10);
     for(let i=0; i<count; i++) {
@@ -540,7 +569,8 @@ function buildGenreGraph(data) {
             name: `Song in ${genre}`,
             group: 'song',
             radius: 5,
-            val: 1
+            val: 1,
+            connectedEdges: 0
         });
         links.push({
             source: songId,
@@ -562,6 +592,13 @@ function buildGenreGraph(data) {
       });
     });
   }
+
+  // Calculate connected edges for each node
+  nodes.forEach(node => {
+    node.connectedEdges = links.filter(link => 
+      link.source.id === node.id || link.target.id === node.id
+    ).length;
+  });
 
   document.getElementById('graphNodes').textContent = nodes.length;
   document.getElementById('graphEdges').textContent = links.length;
@@ -586,7 +623,14 @@ function updateGraph() {
       if(d.type === 'artist-link') return "rgba(138, 43, 226, 0.4)";
       return "rgba(255, 255, 255, 0.15)";
     })
-    .attr("stroke-width", d => d.type === 'genre-link' ? 2 : 1);
+    .attr("stroke-width", d => d.type === 'genre-link' ? 2 : 1)
+    .style("stroke-dasharray", d => {
+      if (animationsEnabled) {
+        return d.type === 'genre-link' ? "5,5" : "0";
+      }
+      return "0";
+    })
+    .style("animation", animationsEnabled ? "dash-flow 20s linear infinite" : "none");
 
   // Nodes
   const node = g.selectAll(".node")
@@ -598,7 +642,24 @@ function updateGraph() {
         .on("drag", dragged)
         .on("end", dragEnded));
 
+  // Add pulse rings for animation
+  if (animationsEnabled) {
+    node.append("circle")
+      .attr("class", "pulse-ring")
+      .attr("r", d => d.radius * 1.5)
+      .attr("fill", "none")
+      .attr("stroke", d => {
+        if(d.group === 'genre') return '#1ed760';
+        if(d.group === 'artist') return '#8a2be2';
+        return '#00bcd4';
+      })
+      .attr("stroke-width", 1)
+      .attr("stroke-opacity", 0.3)
+      .style("pointer-events", "none");
+  }
+
   node.append("circle")
+    .attr("class", "node-circle")
     .attr("r", d => d.radius)
     .attr("fill", d => {
         if(d.group === 'genre') return '#1ed760';
@@ -608,39 +669,24 @@ function updateGraph() {
     .attr("stroke", "#fff")
     .attr("stroke-width", d => d.group === 'song' ? 0.5 : 2)
     .style("cursor", "pointer")
+    .style("transition", animationsEnabled ? "all 0.3s ease" : "none")
+    .on("mouseover", function(event, d) {
+      if (animationsEnabled) {
+        d3.select(this)
+          .classed("glow", true)
+          .classed("float", d.group === 'genre');
+      }
+    })
+    .on("mouseout", function(event, d) {
+      if (animationsEnabled && selectedNode !== d.id) {
+        d3.select(this)
+          .classed("glow", false)
+          .classed("float", false);
+      }
+    })
     .on("click", (event, d) => {
-        // Stop the click from bubbling to SVG background
-        event.stopPropagation();
-        
-        // Reset all highlights
-        d3.selectAll("circle")
-          .attr("stroke", "#fff")
-          .attr("stroke-width", n => n.group==='song'?0.5:2)
-          .style("filter", "none");
-
-        // Highlight this node
-        d3.select(event.currentTarget)
-          .attr("stroke", "#ffff00")
-          .attr("stroke-width", 4)
-          .style("filter", "drop-shadow(0 0 8px #ffff00)");
-        
-        // Show info
-        const info = document.getElementById('nodeInfo');
-        info.classList.add('active');
-        
-        const typeLabel = d.group.charAt(0).toUpperCase() + d.group.slice(1);
-        
-        document.getElementById('infoContent').innerHTML = `
-            <div style="margin-bottom:8px">
-              <strong>Type:</strong> <span style="color:#aaa">${typeLabel}</span>
-            </div>
-            <div style="margin-bottom:8px">
-              <strong>Name:</strong> <span style="font-size:1.1em; color:white">${d.name}</span>
-            </div>
-            <div>
-              <strong>Connectivity:</strong> ${d.val}
-            </div>
-        `;
+        event.stopPropagation(); // Stop background click
+        handleNodeClick(d);
     });
 
   // Labels
@@ -654,11 +700,11 @@ function updateGraph() {
     .style("text-shadow", "0px 0px 3px black")
     .style("display", showLabels ? "block" : "none");
 
-  // Physics - Stronger repulsion for clearer graph
+  // Physics
   simulation = d3.forceSimulation(nodes)
     .force("link", d3.forceLink(links).id(d => d.id)
       .distance(d => {
-        if(d.type === 'genre-link') return 350; // Long distance for genres
+        if(d.type === 'genre-link') return 350; 
         if(d.type === 'artist-link') return 120;
         return 70;
       })
@@ -672,7 +718,17 @@ function updateGraph() {
     .force("center", d3.forceCenter(width / 2, height / 2).strength(0.05))
     .on("tick", ticked);
   
-  setTimeout(zoomToFit, 800);
+  // Add animated background particles if animations enabled
+  if (animationsEnabled) {
+    addBackgroundParticles();
+  }
+  
+  setTimeout(() => {
+    zoomToFit();
+    if (animationsEnabled) {
+      //animateGraphIntro();
+    }
+  }, 800);
 
   function ticked() {
     link
@@ -684,6 +740,196 @@ function updateGraph() {
     node.attr("transform", d => `translate(${d.x},${d.y})`);
   }
 }
+
+function handleNodeClick(d) {
+  // Remove previous selection
+  resetGraph();
+  
+  // Set selected node
+  selectedNode = d.id;
+  
+  // 1. Reset Styles first
+  d3.selectAll(".node-circle")
+    .attr("stroke", "#fff")
+    .attr("stroke-width", n => n.group === 'song' ? 0.5 : 2)
+    .style("filter", "none");
+
+  // 2. Identify connected nodes and links
+  const connectedNodeIds = new Set([d.id]);
+  const connectedLinks = [];
+  
+  // Find all connected links
+  links.forEach(link => {
+    const sourceId = link.source.id || link.source;
+    const targetId = link.target.id || link.target;
+    
+    if (sourceId === d.id || targetId === d.id) {
+      connectedLinks.push(link);
+      connectedNodeIds.add(sourceId);
+      connectedNodeIds.add(targetId);
+    }
+  });
+
+  // 3. Highlight connected links with purple and blue colors
+  g.selectAll(".link")
+    .style("stroke", link => {
+      if (connectedLinks.includes(link)) {
+        // Purple for artist links, blue for song links
+        if (link.type === 'artist-link') return '#8a2be2'; // Purple
+        if (link.type === 'song-link') return '#00bcd4';   // Blue
+        return '#1ed760'; // Green for genre links
+      }
+      return "rgba(255, 255, 255, 0.05)";
+    })
+    .style("stroke-width", link => connectedLinks.includes(link) ? 3 : 1)
+    .style("stroke-opacity", link => connectedLinks.includes(link) ? 1 : 0.1);
+
+  // 4. Dim unconnected nodes and highlight connected ones
+  g.selectAll(".node")
+    .select(".node-circle")
+    .style("opacity", nodeData => connectedNodeIds.has(nodeData.id) ? 1 : 0.2)
+    .attr("stroke-width", nodeData => {
+      if (nodeData.id === d.id) return 4;
+      if (connectedNodeIds.has(nodeData.id)) return 2;
+      return nodeData.group === 'song' ? 0.5 : 2;
+    })
+    .attr("stroke", nodeData => {
+      if (nodeData.id === d.id) return '#ffff00';
+      if (connectedNodeIds.has(nodeData.id)) {
+        if (nodeData.group === 'artist') return '#8a2be2';
+        if (nodeData.group === 'song') return '#00bcd4';
+        return '#1ed760';
+      }
+      return '#fff';
+    });
+
+  // Highlight the clicked node with yellow glow
+  g.selectAll(".node")
+    .filter(nodeData => nodeData.id === d.id)
+    .select(".node-circle")
+    .attr("stroke", "#ffff00")
+    .attr("stroke-width", 4)
+    .style("filter", "drop-shadow(0 0 15px #ffff00)");
+
+  // 5. Show Info Box with more detailed information
+  const info = document.getElementById('nodeInfo');
+  info.classList.add('active');
+  
+  const typeLabel = d.group.charAt(0).toUpperCase() + d.group.slice(1);
+  const edgeCount = connectedLinks.length;
+  
+  document.getElementById('infoContent').innerHTML = `
+    <div style="margin-bottom:10px; padding: 8px; background: rgba(30, 215, 96, 0.1); border-radius: 6px;">
+      <strong style="color:#1ed760;">Type:</strong> <span style="color:#aaa">${typeLabel}</span>
+    </div>
+    <div style="margin-bottom:10px; padding: 8px; background: rgba(138, 43, 226, 0.1); border-radius: 6px;">
+      <strong style="color:#8a2be2;">Name:</strong> <span style="font-size:1.1em; color:white">${d.name}</span>
+    </div>
+    <div style="margin-bottom:10px; padding: 8px; background: rgba(0, 188, 212, 0.1); border-radius: 6px;">
+      <strong style="color:#00bcd4;">Connections:</strong> ${edgeCount} links
+    </div>
+    <div style="margin-bottom:10px; padding: 8px; background: rgba(255, 255, 255, 0.05); border-radius: 6px;">
+      <strong>Strength:</strong> ${d.val} plays
+    </div>
+    <div style="margin-top: 15px; font-size: 0.9em; color: rgba(255, 255, 255, 0.7);">
+      Connected to ${connectedNodeIds.size - 1} other nodes
+    </div>
+  `;
+}
+
+function resetGraph() {
+  selectedNode = null;
+  const info = document.getElementById('nodeInfo');
+  info.classList.remove('active');
+  
+  // Reset all nodes
+  g.selectAll(".node-circle")
+    .attr("stroke", "#fff")
+    .attr("stroke-width", d => d.group === 'song' ? 0.5 : 2)
+    .style("opacity", 1)
+    .style("filter", "none")
+    .classed("glow", false)
+    .classed("float", false);
+  
+  // Reset all links to default colors
+  g.selectAll(".link")
+    .style("stroke", d => {
+      if(d.type === 'genre-link') return "rgba(30, 215, 96, 0.4)";
+      if(d.type === 'artist-link') return "rgba(138, 43, 226, 0.4)";
+      return "rgba(255, 255, 255, 0.15)";
+    })
+    .style("stroke-width", d => d.type === 'genre-link' ? 2 : 1)
+    .style("stroke-opacity", 1);
+  
+  // Reset labels
+  g.selectAll("text").style("opacity", 1);
+}
+
+function addBackgroundParticles() {
+  const container = document.getElementById('graph-container');
+  const width = container.clientWidth;
+  const height = container.clientHeight;
+  
+  // Create particle layer
+  const particleLayer = svg.append("g").attr("class", "particles");
+  
+  // Add particles
+  for (let i = 0; i < 50; i++) {
+    particleLayer.append("circle")
+      .attr("r", Math.random() * 2 + 0.5)
+      .attr("fill", () => {
+        const colors = ['rgba(30, 215, 96, 0.3)', 'rgba(138, 43, 226, 0.3)', 'rgba(0, 188, 212, 0.3)'];
+        return colors[Math.floor(Math.random() * colors.length)];
+      })
+      .attr("cx", Math.random() * width)
+      .attr("cy", Math.random() * height)
+      .style("animation", `float-particle ${Math.random() * 10 + 10}s ease-in-out infinite`)
+      .style("animation-delay", `${Math.random() * 5}s`);
+  }
+  
+  // Add CSS for particle animation
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes float-particle {
+      0%, 100% { transform: translate(0, 0); }
+      25% { transform: translate(${Math.random() * 20 - 10}px, ${Math.random() * 20 - 10}px); }
+      50% { transform: translate(${Math.random() * 30 - 15}px, ${Math.random() * 30 - 15}px); }
+      75% { transform: translate(${Math.random() * 20 - 10}px, ${Math.random() * 20 - 10}px); }
+    }
+    @keyframes dash-flow {
+      to { stroke-dashoffset: -1000; }
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+// function animateGraphIntro() {
+//   // Animate nodes appearing one by one
+//   g.selectAll(".node")
+//     .style("opacity", 0)
+//     .transition()
+//     .delay((d, i) => i * 50)
+//     .duration(500)
+//     .style("opacity", 1)
+//     .style("transform", "scale(1)")
+//     .on("start", function() {
+//       d3.select(this)
+//         .style("transform", "scale(0)")
+//         .style("opacity", 0);
+//     });
+  
+//   // Animate links appearing
+//   g.selectAll(".link")
+//     .style("stroke-opacity", 0)
+//     .transition()
+//     .delay(500)
+//     .duration(1000)
+//     .style("stroke-opacity", d => {
+//       if(d.type === 'genre-link') return 0.4;
+//       if(d.type === 'artist-link') return 0.4;
+//       return 0.15;
+//     });
+// }
 
 function zoomToFit() {
   const container = document.getElementById('graph-container');
@@ -731,6 +977,12 @@ function dragEnded(event, d) {
   svg.style("cursor", "grab");
 }
 
+// Add toggle animations button
+document.getElementById('animate-btn').addEventListener('click', () => {
+  animationsEnabled = !animationsEnabled;
+  updateGraph();
+});
+
 document.getElementById('zoom-in').addEventListener('click', () => svg.transition().call(zoom.scaleBy, 1.3));
 document.getElementById('zoom-out').addEventListener('click', () => svg.transition().call(zoom.scaleBy, 0.7));
 document.getElementById('zoom-fit').addEventListener('click', zoomToFit);
@@ -758,7 +1010,6 @@ async function loadRecommendedSongs(orderedGenres) {
 
   for (const genre of topGenres) {
     try {
-      // Real iTunes API call
       const response = await fetch(`${ITUNES_API}/search?term=${encodeURIComponent(genre)}&media=music&entity=song&limit=15`);
       const data = await response.json();
       
@@ -777,7 +1028,6 @@ async function loadRecommendedSongs(orderedGenres) {
     }
   }
 
-  // Shuffle and display
   songs = songs.sort(() => Math.random() - 0.5).slice(0, 12);
   displayRecommendedSongs(songs);
 }
@@ -843,7 +1093,7 @@ async function loadRecommendations() {
         initGraph();
         buildGenreGraph(data);
         loadRecommendedSongs(data.orderedGenres);
-      }, 50); // Small delay to ensure DOM is rendered
+      }, 50);
     }
 
   } catch (error) {
@@ -879,7 +1129,6 @@ function createChart(id, type, dataObj) {
     let labels = Object.keys(dataObj);
     let values = Object.values(dataObj);
     
-    // Limit large datasets
     if(labels.length > 10) {
         labels = labels.slice(0, 10);
         values = values.slice(0, 10);
