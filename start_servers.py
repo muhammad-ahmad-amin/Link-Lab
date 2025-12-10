@@ -20,6 +20,8 @@ if __name__ == "__main__":
     songs = run("songs_recommendations.py", 5001)
     time.sleep(1)
 
+    
+
     print("🎧 movies_recommendations -> http://localhost:5000")
     print("🎶 songs_recommendations -> http://localhost:5001")
 
