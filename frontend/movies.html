@@ -438,27 +438,30 @@ document.getElementById('recommendBtn').addEventListener('click', async () => {
     try {
         const users = JSON.parse(localStorage.getItem('users') || '[]');
         const watchlist = JSON.parse(localStorage.getItem('watchlist') || '[]');
+        
         const payload = { users, watchlist };
 
-        // Option A: Use a CORS proxy to call your backend
-        const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
-        const targetUrl = 'http://127.0.0.1:8080/recommend';
-        
-        const res = await fetch(proxyUrl + targetUrl, {
-            method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
+        // Your backend URL (no proxy needed now!)
+        const backendURL = "http://127.0.0.1:8080/recommend";
+
+        const res = await fetch(backendURL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
             },
             body: JSON.stringify(payload)
         });
 
-        if (!res.ok) throw new Error('Network response was not ok');
+        if (!res.ok) throw new Error("Failed to get response from backend");
 
-        const responseData = await res.json();
-        const orderedGenres = responseData.orderedGenres || [];
-        localStorage.setItem('orderedGenres', JSON.stringify(orderedGenres));
-        window.location.href = 'movies_recommendations.html';
+        // Flask returns a pure array: ["Drama","Action",...]
+        const orderedGenres = await res.json();
+
+        // Store it locally
+        localStorage.setItem("orderedGenres", JSON.stringify(orderedGenres));
+
+        // Redirect to next page
+        window.location.href = "movies_recommendations.html";
 
     } catch (error) {
         console.warn('Backend unavailable, computing recommendations manually...', error);
