@@ -3,46 +3,247 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>ShopHub - Recommendation System</title>
+<title>Link Lab - Recommendation System</title>
 <style>
+  /* Global Reset & Font */
   * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-  body { background: linear-gradient(135deg, #fef3f5 0%, #e8f5e9 25%, #e3f2fd 50%, #f3e5f5 75%, #fff3e0 100%); color: #2d3748; min-height: 100vh; position: relative; overflow-x: hidden; }
-  body::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at 20% 80%, rgba(255, 182, 193, 0.15) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(176, 224, 230, 0.15) 0%, transparent 50%); animation: pulseBackground 8s ease-in-out infinite; pointer-events: none; }
-  @keyframes pulseBackground { 0%, 100% { opacity: 0.5; } 50% { opacity: 0.8; } }
-  .navbar { display: flex; justify-content: space-between; align-items: center; padding: 1.2rem 3rem; background: linear-gradient(135deg, #ffd6e8 0%, #c8e6ff 50%, #ffd6e8 100%); backdrop-filter: blur(20px); position: sticky; top: 0; z-index: 1000; border-bottom: 2px solid rgba(255, 182, 193, 0.3); box-shadow: 0 5px 30px rgba(0, 0, 0, 0.1); }
-  .navbar h2 { margin: 0; font-size: 2.2rem; background: linear-gradient(135deg, #ff85a1, #ffa3c7, #85d8ff, #a3d9ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; letter-spacing: 2px; cursor: pointer; }
-  .nav-links { display: flex; align-items: center; gap: 1.5rem; }
-  .nav-links button, .nav-links select, #searchInput { background: rgba(255, 255, 255, 0.8); color: #4a5568; border: 2px solid rgba(255, 182, 193, 0.3); padding: 0.8rem 1.5rem; border-radius: 12px; cursor: pointer; font-size: 1rem; transition: all 0.3s; backdrop-filter: blur(10px); }
-  .nav-links button:hover, .nav-links select:hover, #searchInput:focus { background: rgba(255, 255, 255, 0.95); transform: translateY(-2px); border-color: rgba(255, 182, 193, 0.6); box-shadow: 0 8px 25px rgba(255, 182, 193, 0.3); }
-  #cartBtn, #recommendationsBtn, #wishlistBtn { background: linear-gradient(135deg, #ffa3c7 0%, #85d8ff 50%, #b4e7ce 100%); color: white; font-weight: 700; border: none; box-shadow: 0 8px 25px rgba(255, 182, 193, 0.4); }
-  #cartBtn:hover, #recommendationsBtn:hover, #wishlistBtn:hover { transform: translateY(-3px) scale(1.05); }
-  .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 2rem; padding: 3rem; max-width: 1600px; margin: 2rem auto; position: relative; z-index: 1; }
-  .product-card { cursor: pointer; position: relative; overflow: hidden; border-radius: 16px; transition: all 0.4s; background: rgba(255, 255, 255, 0.9); border: 2px solid rgba(255, 182, 193, 0.3); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); }
-  .product-card:hover { transform: translateY(-15px) scale(1.05); box-shadow: 0 25px 50px rgba(255, 182, 193, 0.3); }
-  .product-card img { width: 100%; height: 250px; display: block; object-fit: cover; transition: transform 0.4s ease; background: #f7fafc; }
-  .product-info { padding: 1rem; position: relative; z-index: 2; }
-  .product-title { font-weight: 600; font-size: 1rem; margin-bottom: 0.5rem; height: 40px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-  .product-price { color: #ff85a1; font-weight: 700; font-size: 1.2rem; }
-  
-  /* Buttons */
-  .add-to-cart, .add-to-wishlist, .remove-item { background: linear-gradient(135deg, #ffd6e8, #c8e6ff); color: #4a5568; border: 2px solid rgba(255, 182, 193, 0.3); padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; font-weight: 600; width: 100%; margin-top: 0.5rem; transition: 0.3s;}
-  .add-to-cart:hover { background: linear-gradient(135deg, #ffa3c7, #85d8ff); color: white; transform: translateY(-2px); }
-  .add-to-wishlist:hover { background: linear-gradient(135deg, #ffa3c7, #85d8ff); color: white; transform: translateY(-2px); }
-  
-  /* Remove Button Specific Style */
-  .remove-item { background: linear-gradient(135deg, #ffcccb, #ffb6c1); color: #e53e3e; border-color: rgba(229, 62, 62, 0.3); }
-  .remove-item:hover { background: linear-gradient(135deg, #ff9999, #ff85a1); color: white; transform: translateY(-2px); }
 
-  .rating-badge { position: absolute; top: 12px; right: 12px; background: linear-gradient(135deg, #ffd89b, #19547b); color: white; padding: 0.4rem 0.8rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; z-index: 2; }
-  .loading { display: flex; justify-content: center; align-items: center; height: 300px; font-size: 1.5rem; color: #ff85a1; grid-column: 1/-1; }
-  .spinner { width: 40px; height: 40px; border: 4px solid rgba(255, 182, 193, 0.3); border-radius: 50%; border-top-color: #ffa3c7; animation: spin 1s linear infinite; margin-right: 1rem; }
+  /* Dark Theme Body */
+  body { 
+    background: linear-gradient(135deg, #1a0a2e 0%, #2d1b4e 50%, #1a0a2e 100%); 
+    color: #e9d5ff; 
+    min-height: 100vh; 
+    position: relative; 
+    overflow-x: hidden; 
+  }
+
+  /* Adapted Background Animation (Dark Pulse) */
+  body::before { 
+    content: ''; 
+    position: absolute; 
+    top: 0; left: 0; 
+    width: 100%; height: 100%; 
+    background: radial-gradient(circle at 20% 80%, rgba(168, 85, 247, 0.15) 0%, transparent 50%), 
+                radial-gradient(circle at 80% 20%, rgba(236, 72, 153, 0.15) 0%, transparent 50%); 
+    animation: pulseBackground 8s ease-in-out infinite; 
+    pointer-events: none; 
+  }
+  @keyframes pulseBackground { 0%, 100% { opacity: 0.5; } 50% { opacity: 0.8; } }
+
+  /* Navbar */
+  .navbar { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    padding: 1.2rem 3rem; 
+    background: rgba(26, 10, 46, 0.95); 
+    backdrop-filter: blur(20px); 
+    position: sticky; 
+    top: 0; 
+    z-index: 1000; 
+    border-bottom: 1px solid rgba(138, 43, 226, 0.4); 
+    box-shadow: 0 5px 30px rgba(0, 0, 0, 0.5); 
+  }
+
+  /* Neon Logo Text */
+  .navbar h2 { 
+    margin: 0; 
+    font-size: 2.2rem; 
+    background: linear-gradient(135deg, #a855f7, #ec4899); 
+    -webkit-background-clip: text; 
+    -webkit-text-fill-color: transparent; 
+    font-weight: 800; 
+    letter-spacing: 2px; 
+    cursor: pointer; 
+  }
+
+  .nav-links { display: flex; align-items: center; gap: 1.5rem; }
+
+  /* Inputs and Standard Buttons */
+  .nav-links button, .nav-links select, #searchInput { 
+    background: rgba(40, 20, 60, 0.6); 
+    color: #e9d5ff; 
+    border: 1px solid rgba(168, 85, 247, 0.4); 
+    padding: 0.8rem 1.5rem; 
+    border-radius: 12px; 
+    cursor: pointer; 
+    font-size: 1rem; 
+    transition: all 0.3s; 
+    backdrop-filter: blur(10px); 
+  }
+
+  .nav-links button:hover, .nav-links select:hover, #searchInput:focus { 
+    background: rgba(60, 30, 90, 0.8); 
+    transform: translateY(-2px); 
+    border-color: #ec4899; 
+    box-shadow: 0 0 15px rgba(168, 85, 247, 0.3); 
+    color: white;
+    outline: none;
+  }
+
+  /* Specific Action Buttons (Gradient Style) */
+  #cartBtn, #recommendationsBtn, #wishlistBtn { 
+    background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%); 
+    color: white; 
+    font-weight: 700; 
+    border: none; 
+    box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4); 
+  }
+
+  #cartBtn:hover, #recommendationsBtn:hover, #wishlistBtn:hover { 
+    transform: translateY(-3px) scale(1.05); 
+    box-shadow: 0 0 25px rgba(236, 72, 153, 0.6);
+  }
+
+  /* Grid Layout */
+  .products-grid { 
+    display: grid; 
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); 
+    gap: 2rem; 
+    padding: 3rem; 
+    max-width: 1600px; 
+    margin: 2rem auto; 
+    position: relative; 
+    z-index: 1; 
+  }
+
+  /* Dark Product Card */
+  .product-card { 
+    cursor: pointer; 
+    position: relative; 
+    overflow: hidden; 
+    border-radius: 20px; 
+    transition: all 0.4s; 
+    background: rgba(40, 20, 60, 0.8); 
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(168, 85, 247, 0.2); 
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); 
+  }
+
+  .product-card:hover { 
+    transform: translateY(-10px) scale(1.02); 
+    box-shadow: 0 0 30px rgba(138, 43, 226, 0.4); 
+    border-color: rgba(236, 72, 153, 0.5);
+  }
+
+  .product-card img { 
+    width: 100%; 
+    height: 250px; 
+    display: block; 
+    object-fit: cover; 
+    transition: transform 0.4s ease; 
+    background: #1a0a2e; /* Fallback for transparency */
+  }
+
+  .product-info { padding: 1.5rem; position: relative; z-index: 2; }
+
+  .product-title { 
+    color: #fff;
+    font-weight: 600; 
+    font-size: 1.1rem; 
+    margin-bottom: 0.5rem; 
+    height: 45px; 
+    overflow: hidden; 
+    display: -webkit-box; 
+    -webkit-line-clamp: 2; 
+    -webkit-box-orient: vertical; 
+  }
+
+  .product-price { 
+    color: #a855f7; 
+    font-weight: 700; 
+    font-size: 1.3rem; 
+    text-shadow: 0 0 10px rgba(168, 85, 247, 0.3);
+  }
+  
+  /* Card Buttons */
+  .add-to-cart, .add-to-wishlist, .remove-item { 
+    padding: 0.8rem 1rem; 
+    border-radius: 12px; 
+    cursor: pointer; 
+    font-weight: 600; 
+    width: 100%; 
+    margin-top: 0.8rem; 
+    transition: 0.3s;
+    font-size: 0.95rem;
+    border: none;
+  }
+
+  /* Primary Button (Gradient) */
+  .add-to-cart { 
+    background: linear-gradient(135deg, #a855f7, #ec4899); 
+    color: white; 
+    box-shadow: 0 4px 10px rgba(168, 85, 247, 0.3);
+  }
+  .add-to-cart:hover { 
+    transform: translateY(-2px); 
+    box-shadow: 0 0 20px rgba(236, 72, 153, 0.5);
+  }
+
+  /* Secondary Button (Outline Style) */
+  .add-to-wishlist { 
+    background: rgba(168, 85, 247, 0.1); 
+    color: #c4b5fd; 
+    border: 1px solid rgba(168, 85, 247, 0.4); 
+  }
+  .add-to-wishlist:hover { 
+    background: rgba(168, 85, 247, 0.2); 
+    color: white; 
+    border-color: #a855f7;
+    transform: translateY(-2px); 
+  }
+  
+  /* Remove Button (Red/Danger Gradient) */
+  .remove-item { 
+    background: linear-gradient(135deg, #ef4444, #b91c1c); 
+    color: white; 
+    box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3);
+  }
+  .remove-item:hover { 
+    transform: translateY(-2px); 
+    box-shadow: 0 0 15px rgba(239, 68, 68, 0.6);
+  }
+
+  .rating-badge { 
+    position: absolute; 
+    top: 12px; 
+    right: 12px; 
+    background: linear-gradient(135deg, #f59e0b, #fbbf24); 
+    color: #1a0a2e; 
+    padding: 0.4rem 0.8rem; 
+    border-radius: 20px; 
+    font-size: 0.8rem; 
+    font-weight: 800; 
+    z-index: 2; 
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+  }
+
+  .loading { 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    height: 300px; 
+    font-size: 1.5rem; 
+    color: #a855f7; 
+    grid-column: 1/-1; 
+  }
+
+  .spinner { 
+    width: 40px; 
+    height: 40px; 
+    border: 4px solid rgba(168, 85, 247, 0.3); 
+    border-radius: 50%; 
+    border-top-color: #ec4899; 
+    animation: spin 1s linear infinite; 
+    margin-right: 1rem; 
+  }
   @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
 
 <div class="navbar">
-  <h2 onclick="window.location.reload()">ShopHub</h2>
+  <h2 onclick="window.location.reload()">Link Lab</h2>
   <div class="nav-links">
     <button id="recommendationsBtn">🎯 AI Graph</button>
     <button id="wishlistBtn">💝 Wishlist</button>
@@ -59,7 +260,7 @@
 </div>
 
 <script>
-const API_URL = 'http://localhost:8080/api'; 
+const API_URL = 'http://localhost:8000/api'; 
 
 let allProducts = [];
 let cart = JSON.parse(localStorage.getItem('cart') || '[]');
