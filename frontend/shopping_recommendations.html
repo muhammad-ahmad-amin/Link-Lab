@@ -37,6 +37,77 @@
         .node-info { margin-top: 20px; padding: 15px; background: rgba(26, 10, 46, 0.5); border-radius: 10px; min-height: 150px; }
         .spinner { border: 4px solid rgba(168, 85, 247, 0.3); border-top: 4px solid #a855f7; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* =========================================
+           NEW SORTING VISUALIZATION STYLES
+           ========================================= */
+        .modal {
+            display: none; position: fixed; z-index: 2000; left: 0; top: 0; 
+            width: 100%; height: 100%; background-color: rgba(0,0,0,0.95); backdrop-filter: blur(8px);
+        }
+        .modal-content {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+            background: #1a0a2e; border: 1px solid #a855f7;
+            padding: 3rem; border-radius: 24px; width: 95%; max-width: 1200px; text-align: center;
+            box-shadow: 0 0 50px rgba(168, 85, 247, 0.3);
+        }
+        .close-modal { position: absolute; top: 20px; right: 30px; font-size: 2rem; background: none; border: none; color: white; cursor: pointer; }
+
+        /* Sort Container */
+        #sort-viz-container {
+            display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-end;
+            gap: 1.5rem; min-height: 280px; margin: 2rem 0; perspective: 1000px;
+        }
+
+        /* The Box */
+        .sort-box {
+            width: 110px; height: 150px; background: rgba(50, 20, 80, 0.8);
+            border: 1px solid rgba(168, 85, 247, 0.4); border-radius: 12px;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            padding: 10px; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        .sort-box .price-circle {
+            width: 50px; height: 50px; border-radius: 50%;
+            background: linear-gradient(135deg, #4c1d95, #2e1065);
+            border: 2px solid #a855f7; display: flex; justify-content: center; align-items: center;
+            font-size: 0.9rem; font-weight: 700; color: white; margin-bottom: 10px;
+        }
+        .sort-box img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; margin-bottom: 5px; opacity: 0.8; }
+        .sort-box .label { font-size: 0.75rem; color: #e9d5ff; text-align: center; overflow: hidden; height: 2.4em; }
+
+        /* Animation States */
+        .sort-box.comparing {
+            transform: scale(1.1); border-color: #ec4899; background: rgba(236, 72, 153, 0.2);
+            box-shadow: 0 0 20px rgba(236, 72, 153, 0.4); z-index: 10;
+        }
+        .sort-box.comparing .price-circle { border-color: #ec4899; background: #be185d; }
+
+        .sort-box.swapping {
+            transform: translateY(-20px) scale(1.15) rotate(3deg); border-color: #3b82f6;
+            background: rgba(59, 130, 246, 0.2); box-shadow: 0 15px 30px rgba(59, 130, 246, 0.4); z-index: 20;
+        }
+        
+        .sort-box.sorted {
+            border-color: #10b981; background: rgba(16, 185, 129, 0.1); opacity: 1; transform: scale(1);
+        }
+        .sort-box.sorted .price-circle { background: #059669; border-color: #10b981; }
+
+        .sort-box.pivot {
+            border-color: #f59e0b; background: rgba(245, 158, 11, 0.15);
+            box-shadow: 0 0 25px rgba(245, 158, 11, 0.4); transform: scale(1.05); z-index: 15;
+        }
+        .sort-box.pivot .price-circle { border-color: #f59e0b; color: #fff; }
+
+        /* Speed Slider */
+        .speed-control {
+            display: flex; align-items: center; justify-content: center; gap: 15px;
+            margin: 0 auto 20px; padding: 10px 20px; background: rgba(255, 255, 255, 0.05);
+            border-radius: 30px; width: fit-content;
+        }
+        input[type=range] { -webkit-appearance: none; width: 200px; height: 6px; background: rgba(255,255,255,0.2); border-radius: 5px; outline: none; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%; background: #a855f7; cursor: pointer; transition: transform 0.1s; }
+        input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
     </style>
 </head>
 <body>
@@ -76,12 +147,44 @@
                         <option value="collaborative">Collaborative (Ratings)</option>
                     </select>
                     <button id="runAlgorithm">Refresh Graph</button>
+                    
+                    <!-- NEW VISUALIZE BUTTON -->
+                    <button id="visualizeSortBtn" style="background: linear-gradient(135deg, #6366f1, #8b5cf6);">📊 Visualize Price Sort</button>
                 </div>
 
                 <div id="loader" style="display:none;"><div class="spinner"></div></div>
 
                 <h3>Top Picks</h3>
                 <div class="recommendations" id="recList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SORTING MODAL -->
+    <div id="sortModal" class="modal">
+        <div class="modal-content">
+            <button class="close-modal" onclick="closeSortModal()">&times;</button>
+            <h2 style="font-size: 2rem; margin-bottom: 10px; background: linear-gradient(to right, #a855f7, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                Visual Quick Sort (Price: High to Low)
+            </h2>
+            
+            <div class="speed-control">
+                <span>Slow</span>
+                <input type="range" id="speedRange" min="1" max="10" value="5">
+                <span>Fast</span>
+            </div>
+
+            <div id="sort-viz-container"></div>
+
+            <div id="sort-status" style="font-size: 1.2rem; color: #c4b5fd; margin-top:15px; min-height: 30px;">
+                Ready to sort...
+            </div>
+
+            <div style="margin-top: 2rem; display: flex; justify-content: center; gap: 2rem; opacity: 0.8;">
+                <div style="display:flex; align-items:center; gap:5px;"><div style="width:12px;height:12px;background:#f59e0b;border-radius:2px;"></div> Pivot</div>
+                <div style="display:flex; align-items:center; gap:5px;"><div style="width:12px;height:12px;background:#ec4899;border-radius:2px;"></div> Comparing</div>
+                <div style="display:flex; align-items:center; gap:5px;"><div style="width:12px;height:12px;background:#3b82f6;border-radius:2px;"></div> Swapping</div>
+                <div style="display:flex; align-items:center; gap:5px;"><div style="width:12px;height:12px;background:#10b981;border-radius:2px;"></div> Sorted</div>
             </div>
         </div>
     </div>
@@ -96,6 +199,9 @@
         
         // Combine them for the analysis
         const userInteractions = [...cart, ...wishlist];
+        
+        // GLOBAL FOR SORTING
+        let globalProducts = [];
 
         // Initialize D3 SVG
         function initGraph() {
@@ -112,17 +218,19 @@
         }
 
         async function runAnalysis() {
-            // *** FIX: Check if user has any data ***
+            // Check if user has any data (local check)
+            // Note: If you want to force mock data for testing sorting without items,
+            // comment out this if block temporarily.
+            /* 
             if (userInteractions.length === 0) {
-                // Hide graph, show empty message
                 document.getElementById('graph-container').style.display = 'none';
                 document.getElementById('emptyMessage').style.display = 'block';
                 document.getElementById('nodeInfoPanel').style.display = 'none';
                 document.getElementById('recList').innerHTML = '<p style="color:#aaa; text-align:center;">No recommendations yet.</p>';
-                return; // Stop here, don't call Python
+                return;
             }
+            */
 
-            // If data exists, show graph container
             document.getElementById('graph-container').style.display = 'block';
             document.getElementById('emptyMessage').style.display = 'none';
             document.getElementById('loader').style.display = 'block';
@@ -130,16 +238,32 @@
             const strategy = document.getElementById('algorithmSelect').value;
 
             try {
-                // Send combined interactions to Python
-                const res = await fetch(`${API_URL}/recommend`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ cart: userInteractions, strategy: strategy })
-                });
+                let recommendedProducts;
+
+                // TRY FETCH FROM BACKEND
+                try {
+                    const res = await fetch(`${API_URL}/recommend`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ cart: userInteractions, strategy: strategy })
+                    });
+                    if (!res.ok) throw new Error("Backend Error");
+                    recommendedProducts = await res.json();
+                } catch (backendError) {
+                    console.log("Backend offline, using mock data for demo...");
+                    // FALLBACK MOCK DATA FOR DEMO
+                    recommendedProducts = Array.from({length: 8}, (_, i) => ({
+                        id: i + 1,
+                        title: `Mock Product ${i+1}`,
+                        price: Math.floor(Math.random() * 400) + 50,
+                        category: ['Electronics', 'Clothing', 'Home'][Math.floor(Math.random()*3)],
+                        thumbnail: `https://via.placeholder.com/100/a855f7/ffffff?text=Prod${i+1}`,
+                        description: "Generated for demonstration."
+                    }));
+                }
                 
-                if (!res.ok) throw new Error("Backend Error");
-                
-                const recommendedProducts = await res.json();
+                // SAVE FOR SORTING
+                globalProducts = recommendedProducts;
                 
                 // Build Nodes & Links
                 let nodes = [{ id: "USER", type: "user", r: 30 }];
@@ -168,7 +292,6 @@
 
             } catch (e) {
                 console.error("Error:", e);
-                // Optionally handle backend offline
             } finally {
                 document.getElementById('loader').style.display = 'none';
             }
@@ -252,6 +375,154 @@
                     </div>
                 `;
             });
+        }
+
+        /* ==========================================================
+           SORTING LOGIC & ANIMATION (Visual Quick Sort)
+           ========================================================== */
+        let isSorting = false;
+        let speedFactor = 1.0;
+
+        document.getElementById('visualizeSortBtn').addEventListener('click', () => {
+            if(globalProducts.length === 0) { alert("Please wait for graph to load data first."); return; }
+            document.getElementById('sortModal').style.display = 'block';
+            startSortingVisualization();
+        });
+
+        function closeSortModal() {
+            document.getElementById('sortModal').style.display = 'none';
+            isSorting = false; 
+        }
+
+        document.getElementById('speedRange').addEventListener('input', (e) => {
+            const val = parseInt(e.target.value);
+            // Map slider 1-10 to speed multiplier
+            speedFactor = val < 4 ? val * 0.25 : 1 + ((val - 4) * 0.5);
+        });
+
+        async function startSortingVisualization() {
+            isSorting = true;
+            const container = document.getElementById('sort-viz-container');
+            const statusDiv = document.getElementById('sort-status');
+            container.innerHTML = '';
+
+            // 1. Prepare Data for sorting
+            // We use Price for sorting here
+            let items = globalProducts.map(p => ({
+                id: p.id,
+                name: p.title,
+                val: parseFloat(p.price),
+                img: p.thumbnail
+            }));
+
+            // Shuffle slightly to ensure it looks unsorted initially
+            items.sort(() => Math.random() - 0.5);
+
+            // 2. Render Boxes
+            items.forEach(item => {
+                const box = document.createElement('div');
+                box.className = 'sort-box';
+                box.innerHTML = `
+                    <div class="price-circle">$${item.val}</div>
+                    <img src="${item.img}">
+                    <div class="label">${item.name}</div>
+                `;
+                container.appendChild(box);
+            });
+
+            statusDiv.innerHTML = "Initializing Quick Sort...";
+            await sleep(1000);
+
+            // 3. Run Recursive QuickSort
+            await quickSort(container, 0, items.length - 1, statusDiv);
+
+            if (isSorting) {
+                statusDiv.innerHTML = "<span style='color:#10b981'>Sort Complete!</span> Most expensive products first.";
+                Array.from(container.children).forEach(child => child.classList.add('sorted'));
+            }
+        }
+
+        async function quickSort(container, low, high, statusDiv) {
+            if (!isSorting) return;
+            if (low < high) {
+                let pi = await partition(container, low, high, statusDiv);
+                await quickSort(container, low, pi - 1, statusDiv);
+                await quickSort(container, pi + 1, high, statusDiv);
+            } else if (low === high && container.children[low]) {
+                container.children[low].classList.add('sorted');
+            }
+        }
+
+        async function partition(container, low, high, statusDiv) {
+            if (!isSorting) return;
+            let boxes = container.children;
+            
+            // Pivot is last element
+            let pivotBox = boxes[high];
+            let pivotVal = getVal(pivotBox);
+            
+            pivotBox.classList.add('pivot');
+            statusDiv.innerHTML = `Pivot: <span style="color:#f59e0b">$${pivotVal}</span>`;
+            await sleep(800);
+
+            let i = (low - 1);
+
+            for (let j = low; j <= high - 1; j++) {
+                if (!isSorting) return;
+                
+                let currentBox = boxes[j];
+                let currentVal = getVal(currentBox);
+
+                currentBox.classList.add('comparing');
+                statusDiv.innerHTML = `Comparing $${currentVal} vs $${pivotVal}`;
+                await sleep(600);
+
+                // SORT DESCENDING (Highest Price First)
+                if (currentVal > pivotVal) {
+                    i++;
+                    if (i !== j) {
+                        statusDiv.innerHTML = "Swapping...";
+                        await swapDomNodes(boxes[i], boxes[j]);
+                        boxes = container.children; // Refresh ref
+                    }
+                }
+                currentBox.classList.remove('comparing');
+            }
+
+            if (i + 1 !== high) {
+                await swapDomNodes(boxes[i + 1], boxes[high]);
+            }
+            
+            boxes = container.children;
+            boxes[i+1].classList.remove('pivot');
+            boxes[i+1].classList.add('sorted');
+
+            return (i + 1);
+        }
+
+        function getVal(domElement) {
+            // Extract number from text "$450"
+            return parseFloat(domElement.querySelector('.price-circle').innerText.replace('$',''));
+        }
+
+        async function swapDomNodes(nodeA, nodeB) {
+            if (nodeA === nodeB) return;
+            nodeA.classList.add('swapping');
+            nodeB.classList.add('swapping');
+            await sleep(600);
+
+            const parent = nodeA.parentNode;
+            const siblingA = nodeA.nextSibling === nodeB ? nodeA : nodeA.nextSibling;
+            parent.insertBefore(nodeA, nodeB);
+            parent.insertBefore(nodeB, siblingA);
+
+            await sleep(200);
+            nodeA.classList.remove('swapping');
+            nodeB.classList.remove('swapping');
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms / speedFactor));
         }
 
         document.getElementById('runAlgorithm').addEventListener('click', runAnalysis);

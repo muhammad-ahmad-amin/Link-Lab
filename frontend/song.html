@@ -826,14 +826,14 @@ document.getElementById('recommendBtn').addEventListener('click', () => {
             duration: track.trackTimeMillis
           }));
           
-          displaySongs(allSongs);
+          displaySongs(allSongs); 
           
           showNotification(`🎵 Recommendations based on: ${orderedGenres.slice(0, 3).join(', ')}`);
         }
       })
       .catch(error => {
         console.error('Recommendation error:', error);
-        grid.innerHTML = '<div class="loading">Failed to load recommendations.</div>';
+        grid.innerHTML = '<div class="loading">Loading....</div>';
       });
   }
 });

@@ -87,39 +87,6 @@
             gap: 15px;
         }
 
-        .user-select {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        select,
-        button {
-            padding: 10px 15px;
-            border-radius: 8px;
-            border: none;
-            background: rgba(255, 255, 255, 0.9);
-            color: #333;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        select {
-            flex: 1;
-        }
-
-        button {
-            background: #4CAF50;
-            color: white;
-        }
-
-        button:hover {
-            background: #45a049;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        }
-
         .recommendations {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -133,6 +100,7 @@
             padding: 15px;
             text-align: center;
             transition: all 0.3s ease;
+            cursor: pointer;
         }
 
         .movie-card:hover {
@@ -187,52 +155,26 @@
             border-radius: 10px;
         }
 
-        .algorithm-info {
-            margin-top: 20px;
-            padding: 15px;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 10px;
-            font-size: 0.9rem;
-            line-height: 1.5;
-        }
-
-        .progress-bar {
-            height: 8px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 4px;
-            margin: 15px 0;
-            overflow: hidden;
-        }
-
-        .progress {
-            height: 100%;
-            background: #4CAF50;
-            width: 0%;
-            transition: width 0.5s ease;
-        }
-
-        .stats {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 10px;
-            font-size: 0.9rem;
-        }
-
-        .highlight {
-            color: #FFD700;
-            font-weight: bold;
-        }
-
         .graph-controls {
             display: flex;
             gap: 10px;
             margin-top: 10px;
+            flex-wrap: wrap;
         }
 
         .graph-btn {
             background: #2196F3;
+            color: white;
+            border: none;
             padding: 8px 12px;
             font-size: 0.9rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .graph-btn:hover {
+            transform: scale(1.05);
         }
 
         .spinner {
@@ -246,13 +188,200 @@
         }
 
         @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
 
-            100% {
-                transform: rotate(360deg);
-            }
+        /* --- REVISED SORTING VIZ (BOXES) --- */
+        .modal {
+            display: none; 
+            position: fixed; 
+            z-index: 2000; 
+            left: 0; 
+            top: 0; 
+            width: 100%; 
+            height: 100%; 
+            background-color: rgba(0,0,0,0.9); 
+            backdrop-filter: blur(8px);
+        }
+
+        .modal-content {
+            position: absolute; 
+            top: 50%; 
+            left: 50%; 
+            transform: translate(-50%, -50%); 
+            background: #0f0f1a;
+            background-image: radial-gradient(at 0% 0%, rgba(33, 150, 243, 0.15) 0px, transparent 50%),
+                              radial-gradient(at 100% 100%, rgba(255, 152, 0, 0.15) 0px, transparent 50%);
+            padding: 3rem; 
+            border-radius: 24px; 
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+            width: 95%; 
+            max-width: 1100px; 
+            text-align: center;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.8);
+        }
+
+        /* Container for the boxes */
+        #sort-viz-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 1.5rem;
+            min-height: 250px;
+            margin: 2rem 0;
+            padding: 1rem;
+            perspective: 1000px;
+        }
+
+        /* Individual Box Design */
+        .sort-box {
+            width: 110px;
+            height: 130px;
+            background: rgba(30, 30, 50, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        .sort-box .score-circle {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #2a2a40, #1a1a2e);
+            border: 2px solid rgba(255,255,255,0.2);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 10px;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);
+        }
+
+        .sort-box .label {
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.7);
+            text-align: center;
+            line-height: 1.2;
+            max-height: 2.4em;
+            overflow: hidden;
+        }
+
+        /* --- STATES FOR ANIMATION --- */
+        
+        /* 1. Comparing (Red/Orange Focus) */
+        .sort-box.comparing {
+            transform: scale(1.1);
+            border-color: #ff4757;
+            background: rgba(255, 71, 87, 0.1);
+            box-shadow: 0 0 20px rgba(255, 71, 87, 0.3);
+            z-index: 10;
+        }
+        .sort-box.comparing .score-circle {
+            border-color: #ff4757;
+            color: #ff4757;
+        }
+
+        /* 2. Swapping (Blue/Movement) */
+        .sort-box.swapping {
+            transform: translateY(-15px) scale(1.15) rotate(2deg);
+            border-color: #00bcd4;
+            background: rgba(0, 188, 212, 0.15);
+            box-shadow: 0 15px 30px rgba(0, 188, 212, 0.4);
+            z-index: 20;
+        }
+        .sort-box.swapping .score-circle {
+            background: #00bcd4;
+            color: #000;
+            border-color: white;
+        }
+
+        /* 3. Sorted (Green/Locked) */
+        .sort-box.sorted {
+            border-color: #4CAF50;
+            background: linear-gradient(180deg, rgba(76, 175, 80, 0.1), transparent);
+            opacity: 0.9;
+            transform: scale(1);
+        }
+        .sort-box.sorted .score-circle {
+            background: #4CAF50;
+            color: white;
+            border-color: #4CAF50;
+            box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+        }
+
+        /* 4. Pivot (Yellow - specific for Quick Sort) */
+        .sort-box.pivot {
+            border-color: #f1c40f;
+            background: rgba(241, 196, 15, 0.15);
+            box-shadow: 0 0 25px rgba(241, 196, 15, 0.4);
+            z-index: 15;
+            transform: scale(1.05);
+        }
+        .sort-box.pivot .score-circle {
+            background: #f1c40f;
+            color: #000;
+            border-color: #fff;
+        }
+
+        /* --- SPEED SLIDER STYLES --- */
+        .speed-control-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin: 0 auto 20px auto;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 30px;
+            width: fit-content;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .speed-label {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Custom Range Slider Styling */
+        input[type=range] {
+            -webkit-appearance: none; 
+            appearance: none;
+            width: 200px; 
+            height: 6px; 
+            background: rgba(255,255,255,0.2); 
+            border-radius: 5px;
+            outline: none; 
+            transition: background .2s;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; 
+            appearance: none;
+            width: 20px; 
+            height: 20px; 
+            border-radius: 50%; 
+            background: #4CAF50; 
+            cursor: pointer; 
+            box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+            transition: transform 0.1s ease;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
         }
     </style>
 </head>
@@ -273,6 +402,8 @@
                     <button class="graph-btn" id="zoom-in">Zoom In</button>
                     <button class="graph-btn" id="zoom-out">Zoom Out</button>
                     <button class="graph-btn" id="reset-view">Reset View</button>
+                    <!-- VISUALIZE SORTING BUTTON -->
+                    <button class="graph-btn" id="sort-viz-btn" style="background-color: #9c27b0;">📊 Visualize Sorting</button>
                 </div>
                 <div class="legend">
                     <div class="legend-item">
@@ -310,7 +441,61 @@
         </div>
     </div>
 
+    <!-- SORTING VISUALIZATION MODAL -->
+    <div id="sortModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h2 style="font-size: 2rem; background: linear-gradient(to right, #4CAF50, #2196F3); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                    Sorting by Rating (Quick Sort)
+                </h2>
+                <button class="close-modal" onclick="closeSortModal()" style="font-size: 2.5rem; padding: 0 15px; background:none; border:none; color:white; cursor:pointer;">&times;</button>
+            </div>
+
+            <!-- SPEED SLIDER -->
+            <div class="speed-control-container">
+                <span class="speed-label">Slow</span>
+                <input type="range" id="speedRange" min="1" max="10" value="4" step="1">
+                <span class="speed-label" style="color: #4CAF50;">Fast</span>
+            </div>
+            
+            <div id="sort-viz-container">
+                <!-- Boxes will be injected here -->
+            </div>
+
+            <div id="sort-status" style="font-size: 1.4rem; font-weight: 300; color: white; margin-top: 10px;">
+                Ready to sort...
+            </div>
+
+            <div style="margin-top: 2rem; display: flex; justify-content: center; gap: 2rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1);">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 15px; height: 15px; background: #f1c40f; border-radius: 4px; box-shadow: 0 0 10px #f1c40f;"></div>
+                    <span style="color: rgba(255,255,255,0.6);">Pivot</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 15px; height: 15px; background: #ff4757; border-radius: 4px; box-shadow: 0 0 10px #ff4757;"></div>
+                    <span style="color: rgba(255,255,255,0.6);">Comparing</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 15px; height: 15px; background: #00bcd4; border-radius: 4px; box-shadow: 0 0 10px #00bcd4;"></div>
+                    <span style="color: rgba(255,255,255,0.6);">Swapping</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 15px; height: 15px; background: #4CAF50; border-radius: 4px; box-shadow: 0 0 10px #4CAF50;"></div>
+                    <span style="color: rgba(255,255,255,0.6);">Sorted</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
+        // Global variable to store recommendations for sorting
+        let globalRecommendedMovies = [];
+        let nodes = [];
+        let links = [];
+        let simulation;
+        let zoom = d3.zoom();
+        let svg, g;
+
         function highlightRecommendedLinks(recommendedMovieIds) {
             // Reset all nodes
             nodes.forEach(n => n.recommended = false);
@@ -338,7 +523,7 @@
 
         async function loadRecommendedMovies() {
             const loader = document.getElementById('loader');
-            loader.style.display = 'block'; // show loader
+            loader.style.display = 'block'; 
 
             const apiKey = '8b3f92d668511fcfa25cb8b8681becc8';
             const orderedGenres = JSON.parse(localStorage.getItem('orderedGenres') || '[]');
@@ -353,7 +538,14 @@
             }).filter(id => id);
 
             if (orderedGenreIds.length === 0) {
+                // If no genre selected, fetch generic popular ones just to show something
+                const res = await fetch(`https://api.themoviedb.org/3/movie/popular?api_key=${apiKey}&page=1`);
+                const data = await res.json();
+                const movies = data.results.slice(0,10);
+                globalRecommendedMovies = movies;
+                displayRecommendations(movies);
                 loader.style.display = 'none';
+                await buildGraph();
                 return;
             }
 
@@ -368,6 +560,9 @@
 
             const uniqueMovies = Array.from(new Map(movies.map(m => [m.id, m])).values());
             const recommendedMovies = uniqueMovies.sort(() => Math.random() - 0.5).slice(0, 10);
+            
+            // Store globally for sorting visualization
+            globalRecommendedMovies = recommendedMovies;
 
             displayRecommendations(recommendedMovies);
             loader.style.display = 'none';
@@ -379,39 +574,24 @@
             setTimeout(() => highlightRecommendedLinks(recommendedIds), 300);
         }
 
-        loadRecommendedMovies();
-
-
         // Initialize the graph
-        let nodes = [];
-        let links = [];
-        let simulation;
-        let zoom = d3.zoom();
-        let svg, g;
-
-        // Initialize the SVG and graph
         function initGraph() {
             const container = document.getElementById('graph-container');
             const width = container.clientWidth;
             const height = container.clientHeight;
 
-            // Clear any existing SVG
             d3.select("#graph-container svg").remove();
 
-            // Create SVG
             svg = d3.select("#graph-container")
                 .append("svg")
                 .attr("width", width)
                 .attr("height", height);
 
-            // Create a group for zooming
             g = svg.append("g");
 
-            // Create groups for links and nodes
             const linkGroup = g.append("g").attr("class", "links");
             const nodeGroup = g.append("g").attr("class", "nodes");
 
-            // Set up zoom behavior
             zoom = d3.zoom()
                 .scaleExtent([0.1, 4])
                 .on("zoom", (event) => {
@@ -421,19 +601,16 @@
             svg.call(zoom);
         }
 
-        // Color scale for node types
         const colorScale = d3.scaleOrdinal()
             .domain(["primary", "secondary", "tertiary"])
             .range(["#4CAF50", "#2196F3", "#FF9800"]);
 
-        // Build the graph with fewer connections
         async function buildGraph() {
             nodes = [];
             links = [];
 
             const apiKey = '8b3f92d668511fcfa25cb8b8681becc8';
 
-            // Fetch popular movies
             let movies = [];
             for (let page = 1; page <= 15; page++) {
                 const res = await fetch(`https://api.themoviedb.org/3/movie/popular?api_key=${apiKey}&language=en-US&page=${page}`);
@@ -442,9 +619,8 @@
             }
 
             movies = Array.from(new Map(movies.map(m => [m.id, m])).values());
-            movies = movies.slice(0, 40); // limit nodes
+            movies = movies.slice(0, 40); 
 
-            // Create nodes
             movies.forEach(movie => {
                 nodes.push({
                     id: `movie-${movie.id}`,
@@ -454,11 +630,9 @@
                 });
             });
 
-            // Limit connections per node
             const MAX_LINKS = 6;
-            const linkCount = {}; // movieId → number of links
+            const linkCount = {};
 
-            // Create reduced links
             for (let i = 0; i < nodes.length; i++) {
                 for (let j = i + 1; j < nodes.length; j++) {
 
@@ -466,7 +640,6 @@
                         nodes[j].genres.includes(g)
                     );
 
-                    // Require at least 2 shared genres (reduces noise)
                     if (sharedGenres.length < 2) continue;
 
                     const source = nodes[i].id;
@@ -475,7 +648,6 @@
                     linkCount[source] = linkCount[source] || 0;
                     linkCount[target] = linkCount[target] || 0;
 
-                    // Enforce max 6 connections per node
                     if (linkCount[source] < MAX_LINKS && linkCount[target] < MAX_LINKS) {
                         links.push({
                             source,
@@ -498,12 +670,10 @@
             const width = container.clientWidth;
             const height = container.clientHeight;
 
-            // Remove old elements
             g.selectAll(".links line").remove();
             g.selectAll(".nodes circle").remove();
             g.selectAll(".nodes text").remove();
 
-            // Links
             const link = g.select(".links")
                 .selectAll("line")
                 .data(links, d => d.id || `${d.source}-${d.target}`)
@@ -513,7 +683,6 @@
                 .attr("stroke-width", 3)
                 .attr("stroke-opacity", 1);
 
-            // Nodes
             const node = g.select(".nodes")
                 .selectAll("circle")
                 .data(nodes, d => d.id)
@@ -533,22 +702,17 @@
                     showNodeInfo(d);
                 });
 
-            // Labels
             const label = g.select(".nodes")
                 .selectAll("text")
                 .data(nodes, d => d.id)
                 .enter()
                 .append("text")
                 .text(d => d.name)
-                .attr("font-size", d =>
-                    d.type === "primary" ? "14px" :
-                        d.type === "secondary" ? "12px" : "10px"
-                )
+                .attr("font-size", "10px")
                 .attr("dx", 15)
                 .attr("dy", 4)
                 .attr("fill", "white");
 
-            // Force Simulation
             simulation = d3.forceSimulation(nodes)
                 .force("link", d3.forceLink(links)
                     .id(d => d.id)
@@ -563,20 +727,19 @@
                 .on("tick", ticked);
 
             function ticked() {
-
                 link
-        .attr("x1", d => Number.isFinite(d.source.x) ? d.source.x : 0)
-        .attr("y1", d => Number.isFinite(d.source.y) ? d.source.y : 0)
-        .attr("x2", d => Number.isFinite(d.target.x) ? d.target.x : 0)
-        .attr("y2", d => Number.isFinite(d.target.y) ? d.target.y : 0);
+                    .attr("x1", d => Number.isFinite(d.source.x) ? d.source.x : 0)
+                    .attr("y1", d => Number.isFinite(d.source.y) ? d.source.y : 0)
+                    .attr("x2", d => Number.isFinite(d.target.x) ? d.target.x : 0)
+                    .attr("y2", d => Number.isFinite(d.target.y) ? d.target.y : 0);
 
-    node
-        .attr("cx", d => Number.isFinite(d.x) ? d.x : 0)
-        .attr("cy", d => Number.isFinite(d.y) ? d.y : 0);
+                node
+                    .attr("cx", d => Number.isFinite(d.x) ? d.x : 0)
+                    .attr("cy", d => Number.isFinite(d.y) ? d.y : 0);
 
-    label
-        .attr("x", d => Number.isFinite(d.x) ? d.x + 15 : 15)
-        .attr("y", d => Number.isFinite(d.y) ? d.y : 0);
+                label
+                    .attr("x", d => Number.isFinite(d.x) ? d.x + 15 : 15)
+                    .attr("y", d => Number.isFinite(d.y) ? d.y : 0);
             }
 
             svg.call(
@@ -587,7 +750,6 @@
             );
         }
 
-        // Drag functions for node interaction
         function dragStarted(event, d) {
             if (!event.active) simulation.alphaTarget(0.3).restart();
             d.fx = d.x;
@@ -605,104 +767,36 @@
             d.fy = null;
         }
 
-        // Show node information when clicked
         function showNodeInfo(node) {
             const nodeInfo = document.querySelector('.node-info');
-
             nodeInfo.innerHTML = `
             <h3>Node Information</h3>
-            <p><strong>ID:</strong> ${node.id}</p>
             <p><strong>Name:</strong> ${node.name}</p>
-            <p><strong>Type:</strong> ${node.type}</p>
             <p><strong>Connections:</strong> ${links.filter(l => l.source.id === node.id || l.target.id === node.id).length}</p>
         `;
         }
 
         function displayRecommendations(recommendations) {
             const container = document.getElementById('recommendations-container');
-            container.innerHTML = ''; // Clear previous recommendations
+            container.innerHTML = ''; 
 
             const imageBase = 'https://image.tmdb.org/t/p/w500';
 
             recommendations.forEach(movie => {
                 const card = document.createElement('div');
-                card.className = 'movie-card'; // Matches your CSS for movie cards
+                card.className = 'movie-card'; 
                 card.innerHTML = `
             <img class="movie-poster" src="${movie.poster_path ? imageBase + movie.poster_path : 'placeholder.jpg'}" alt="${movie.title}">
             <div class="movie-title">${movie.title}</div>
             <div class="movie-rating">⭐ ${movie.vote_average || 'N/A'}</div>
         `;
                 card.addEventListener('click', () => {
-                    window.location.href = `movie.html?id=${movie.id}`;
+                    alert('You selected: ' + movie.title);
                 });
                 container.appendChild(card);
             });
         }
 
-
-        // Highlight node connections in the graph
-        function highlightNodeConnections(nodeId) {
-            // Reset all nodes and links to default appearance
-            g.selectAll(".nodes circle")
-                .attr("r", d => {
-                    if (d.type === "primary") return 15;
-                    if (d.type === "secondary") return 12;
-                    return 8;
-                })
-                .attr("fill", d => colorScale(d.type))
-                .attr("stroke", "#fff")
-                .attr("stroke-width", 2);
-
-            g.selectAll(".links line")
-                .attr("stroke", d => {
-                    const weight = d.weight;
-                    if (weight < 2) return "#4CAF50";
-                    if (weight < 3) return "#2196F3";
-                    return "#FF9800";
-                })
-                .attr("stroke-width", d => Math.max(1, 5 - d.weight / 2))
-                .attr("stroke-opacity", 0.7);
-
-            // Find connections for the node
-            const nodeConnections = links.filter(l =>
-                l.source.id === nodeId || l.target.id === nodeId
-            );
-
-            // Highlight connected nodes
-            const connectedNodeIds = new Set();
-            nodeConnections.forEach(link => {
-                connectedNodeIds.add(link.source.id);
-                connectedNodeIds.add(link.target.id);
-            });
-
-            g.selectAll(".nodes circle")
-                .filter(d => connectedNodeIds.has(d.id) && d.id !== nodeId)
-                .attr("r", d => {
-                    if (d.type === "secondary") return 14;
-                    return 10;
-                })
-                .attr("stroke", "#FFD700")
-                .attr("stroke-width", 3);
-
-            // Highlight connecting links
-            g.selectAll(".links line")
-                .filter(d => d.source.id === nodeId || d.target.id === nodeId)
-                .attr("stroke", "#4CAF50")
-                .attr("stroke-width", 3)
-                .attr("stroke-opacity", 1);
-        }
-
-        // Event listeners
-        // document.getElementById('reset-graph').addEventListener('click', function() {
-        //     buildGraph();
-        //     document.querySelector('.node-info').innerHTML = '<h3>Node Information</h3><p>Click on any node to see details here.</p>';
-        //     document.getElementById('algorithm-progress').style.width = '0%';
-        //     document.getElementById('genres-analyzed').textContent = '0';
-        //     document.getElementById('movies-recommended').textContent = '0';
-        //     document.getElementById('recommendations-container').innerHTML = '';
-        // });
-
-        // Graph control event listeners
         document.getElementById('zoom-in').addEventListener('click', function () {
             svg.transition().duration(750).call(zoom.scaleBy, 1.5);
         });
@@ -712,20 +806,179 @@
         });
 
         document.getElementById('reset-view').addEventListener('click', function () {
-            svg.transition().duration(750).call(
-                zoom.transform,
-                d3.zoomIdentity
-            );
+            svg.transition().duration(750).call(zoom.transform, d3.zoomIdentity);
         });
 
-        // Handle window resize
         window.addEventListener('resize', function () {
             initGraph();
         });
 
-        // Initialize the graph
+        // ----------------------------------------------------
+        // SORTING VISUALIZATION LOGIC (QUICK SORT + SPEED CONTROL)
+        // ----------------------------------------------------
+
+        let isSorting = false;
+        let speedFactor = 1.0; 
+
+        // Listen for slider changes
+        document.getElementById('speedRange').addEventListener('input', (e) => {
+            const val = parseInt(e.target.value);
+            if(val < 4) {
+                speedFactor = 0.25 * val; 
+            } else {
+                speedFactor = 1 + ((val - 4) * 0.5); 
+            }
+        });
+
+        document.getElementById('sort-viz-btn').addEventListener('click', () => {
+            if(!globalRecommendedMovies || globalRecommendedMovies.length === 0) {
+                alert("Wait for recommendations to load first!");
+                return;
+            }
+            document.getElementById('sortModal').style.display = 'block';
+            startSortingVisualization();
+        });
+
+        function closeSortModal() {
+            document.getElementById('sortModal').style.display = 'none';
+            isSorting = false; 
+        }
+
+        async function startSortingVisualization() {
+            isSorting = true;
+            const container = document.getElementById('sort-viz-container');
+            const statusDiv = document.getElementById('sort-status');
+            container.innerHTML = '';
+
+            // 1. Prepare Data
+            // Map movie data to the format needed for sorting
+            let dataArr = globalRecommendedMovies.map(movie => ({
+                name: movie.title, 
+                val: parseFloat(movie.vote_average) // Use rating for sorting
+            }));
+            
+            // Randomize slightly for demo purposes so it's not already sorted
+            dataArr = dataArr.sort(() => Math.random() - 0.5);
+
+            // 2. Render Initial Boxes
+            dataArr.forEach((item, index) => {
+                const box = document.createElement('div');
+                box.className = 'sort-box';
+                box.id = `box-${index}`;
+                
+                box.innerHTML = `
+                    <div class="score-circle">${item.val.toFixed(1)}</div>
+                    <div class="label">${item.name}</div>
+                `;
+                container.appendChild(box);
+            });
+
+            statusDiv.innerHTML = "Initializing Quick Sort (Descending by Rating)...";
+            await sleep(1000);
+
+            // 3. Start Recursive Quick Sort
+            await quickSort(container, 0, dataArr.length - 1, statusDiv);
+
+            if (isSorting) {
+                statusDiv.innerHTML = "<span style='color:#4CAF50'>Sort Complete!</span> Movies ordered by Rating.";
+                Array.from(container.children).forEach(child => child.classList.add('sorted'));
+            }
+        }
+
+        // Recursive Quick Sort
+        async function quickSort(container, low, high, statusDiv) {
+            if (!isSorting) return;
+
+            if (low < high) {
+                let pi = await partition(container, low, high, statusDiv);
+                await quickSort(container, low, pi - 1, statusDiv);
+                await quickSort(container, pi + 1, high, statusDiv);
+            } else if (low === high) {
+                if(container.children[low]) container.children[low].classList.add('sorted');
+            }
+        }
+
+        // Partition Function
+        async function partition(container, low, high, statusDiv) {
+            if (!isSorting) return;
+
+            let boxes = container.children;
+            
+            // Select Pivot (Last element)
+            let pivotBox = boxes[high];
+            let pivotVal = parseFloat(pivotBox.querySelector('.score-circle').innerText);
+            let pivotName = pivotBox.querySelector('.label').innerText;
+
+            pivotBox.classList.add('pivot');
+            statusDiv.innerHTML = `Pivot selected: <span style="color:#f1c40f">${pivotName}</span>`;
+            await sleep(800);
+
+            let i = (low - 1); 
+
+            for (let j = low; j <= high - 1; j++) {
+                if (!isSorting) return;
+
+                let currentBox = boxes[j];
+                let currentVal = parseFloat(currentBox.querySelector('.score-circle').innerText);
+                let currentName = currentBox.querySelector('.label').innerText;
+
+                currentBox.classList.add('comparing');
+                statusDiv.innerHTML = `Comparing <span style="color:#ff4757">${currentName}</span> vs Pivot`;
+                await sleep(600);
+
+                // Sorting DESCENDING (Highest Rating First)
+                if (currentVal > pivotVal) {
+                    i++;
+                    if (i !== j) {
+                        statusDiv.innerHTML = `Swapping <span style="color:#00bcd4">${currentName}</span> to left`;
+                        await swapDomNodes(boxes[i], boxes[j]);
+                        boxes = container.children; // refresh ref
+                    }
+                }
+                currentBox.classList.remove('comparing');
+            }
+
+            if (i + 1 !== high) {
+                statusDiv.innerHTML = `Placing Pivot <span style="color:#f1c40f">${pivotName}</span>`;
+                await swapDomNodes(boxes[i + 1], boxes[high]);
+            }
+            
+            boxes = container.children; 
+            boxes[i + 1].classList.remove('pivot');
+            boxes[i + 1].classList.add('sorted');
+            
+            return (i + 1);
+        }
+
+        // Helper to swap nodes visually
+        async function swapDomNodes(nodeA, nodeB) {
+            if (nodeA === nodeB) return;
+
+            nodeA.classList.add('swapping');
+            nodeB.classList.add('swapping');
+            
+            // Wait based on speed
+            await sleep(600);
+
+            const parent = nodeA.parentNode;
+            const siblingA = nodeA.nextSibling === nodeB ? nodeA : nodeA.nextSibling;
+            parent.insertBefore(nodeA, nodeB);
+            parent.insertBefore(nodeB, siblingA);
+
+            await sleep(200);
+            
+            nodeA.classList.remove('swapping');
+            nodeB.classList.remove('swapping');
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms / speedFactor));
+        }
+
+        // Initialize logic
         initGraph();
+        loadRecommendedMovies();
+
     </script>
 </body>
-
 </html>
