@@ -374,6 +374,28 @@
     box-shadow: 0 25px 60px rgba(0,0,0,0.8);
   }
 
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+  }
+
+  .close-modal {
+    font-size: 2.5rem;
+    padding: 0 15px;
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .close-modal:hover {
+    color: #ff4757;
+    transform: scale(1.2);
+  }
+
   /* --- SPEED SLIDER STYLES --- */
   .speed-control-container {
     display: flex;
@@ -398,7 +420,7 @@
 
   /* Custom Range Slider Styling */
   input[type=range] {
-    -webkit-appearance: none; /* Override default CSS styles */
+    -webkit-appearance: none;
     appearance: none;
     width: 200px; 
     height: 6px; 
@@ -521,15 +543,47 @@
   /* 3. Sorted (Green/Locked) */
   .sort-box.sorted {
     border-color: #1ed760;
-    background: linear-gradient(180deg, rgba(30, 215, 96, 0.1), transparent);
-    opacity: 0.8;
+    background: linear-gradient(180deg, rgba(30, 215, 96, 0.2), rgba(30, 215, 96, 0.05));
+    opacity: 1;
     transform: scale(1);
+    animation: sortedPulse 0.6s ease-out;
   }
   .sort-box.sorted .score-circle {
-    background: #1ed760;
+    background: linear-gradient(135deg, #1ed760, #15b84f);
     color: #000;
     border-color: #1ed760;
-    box-shadow: 0 0 10px rgba(30, 215, 96, 0.5);
+    box-shadow: 0 0 15px rgba(30, 215, 96, 0.7);
+    font-weight: 800;
+  }
+  
+  /* Pivot highlighting */
+  .sort-box.pivot {
+    border-color: #f1c40f;
+    background: rgba(241, 196, 15, 0.15);
+    box-shadow: 0 0 25px rgba(241, 196, 15, 0.5);
+    animation: pivotGlow 1s ease-in-out infinite alternate;
+  }
+  .sort-box.pivot .score-circle {
+    border-color: #f1c40f;
+    color: #f1c40f;
+    font-weight: 800;
+    animation: pivotSpin 2s linear infinite;
+  }
+  
+  @keyframes sortedPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+    100% { transform: scale(1); }
+  }
+  
+  @keyframes pivotGlow {
+    from { box-shadow: 0 0 15px rgba(241, 196, 15, 0.3); }
+    to { box-shadow: 0 0 30px rgba(241, 196, 15, 0.7); }
+  }
+  
+  @keyframes pivotSpin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
   }
 
   @media (max-width: 768px) {
@@ -666,15 +720,16 @@
   <div class="modal-content">
     <div class="modal-header">
       <h2 style="font-size: 2rem; background: linear-gradient(to right, #1ed760, #00bcd4); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-        Sorting Algorithms
+        Quick Sort Algorithm Visualization
       </h2>
-      <button class="close-modal" onclick="closeSortModal()" style="font-size: 2.5rem; padding: 0 15px; background:none; border:none; color:white; cursor:pointer;">&times;</button>
+      <button class="close-modal" onclick="closeSortModal()">&times;</button>
     </div>
 
     <!-- NEW SPEED SLIDER -->
+        <!-- NEW SPEED SLIDER -->
     <div class="speed-control-container">
-        <span class="speed-label">Slow</span>
-        <input type="range" id="speedRange" min="1" max="10" value="4" step="1">
+        <span class="speed-label">Fast</span>
+        <input type="range" id="speedRange" min="1" max="10" value="5" step="1">
         <span class="speed-label" style="color: #1ed760;">Fast</span>
     </div>
     
@@ -1391,11 +1446,11 @@ let speedFactor = 1.0; // Multiplier for animation speed
 // Listen for slider changes
 document.getElementById('speedRange').addEventListener('input', (e) => {
     const val = parseInt(e.target.value);
-    // Map slider 1-10: 1 = Slow (0.25x), 4 = Normal (1x), 10 = Fast (4x)
+    // Map slider 1-10: 1 = Slow (0.25x), 4 = Normal (1x), 10 = Fast (2.5x)
     if(val < 4) {
         speedFactor = 0.25 * val; 
     } else {
-        speedFactor = 1 + ((val - 4) * 0.5); 
+        speedFactor = 1 + ((val - 4) * 0.25); 
     }
 });
 
@@ -1405,149 +1460,281 @@ document.getElementById('sort-viz-btn').addEventListener('click', () => {
         globalData = {
            recommendationScores: { "Pop": 95, "Rock": 82, "Jazz": 60, "Hip Hop": 88, "Classical": 45, "Indie": 75, "Metal": 55, "Blues": 65 }
         };
-    }
-    document.getElementById('sortModal').style.display = 'block';
-    startSortingVisualization();
+            }
+    openSortModal();
 });
+
+function openSortModal() {
+    const modal = document.getElementById('sortModal');
+    modal.style.display = 'block';
+    
+    // Reset speed to default
+    speedFactor = 1.0;
+    document.getElementById('speedRange').value = 4;
+    
+    // Prepare data for sorting visualization
+    const scores = globalData.recommendationScores;
+    const items = Object.entries(scores).map(([genre, score], index) => ({
+        id: index,
+        genre: genre,
+        score: score,
+        color: getColorForScore(score)
+    }));
+    
+    renderSortingBoxes(items);
+    
+    // Start the sorting visualization
+    visualizeQuickSort([...items], document.getElementById('sort-viz-container'));
+}
 
 function closeSortModal() {
     document.getElementById('sortModal').style.display = 'none';
-    isSorting = false; 
+    isSorting = false;
 }
 
-async function startSortingVisualization() {
-    isSorting = true;
+function getColorForScore(score) {
+    if (score >= 90) return '#1ed760';
+    if (score >= 75) return '#8a2be2';
+    if (score >= 60) return '#00bcd4';
+    if (score >= 45) return '#ffa502';
+    return '#ff4757';
+}
+
+function renderSortingBoxes(items) {
     const container = document.getElementById('sort-viz-container');
-    const statusDiv = document.getElementById('sort-status');
     container.innerHTML = '';
-
-    // 1. Prepare Data
-    let scores = globalData.recommendationScores;
-    let dataArr = Object.entries(scores).map(([k,v]) => ({name: k, val: v}));
     
-    // Shuffle and slice for demo
-    dataArr = dataArr.sort(() => Math.random() - 0.5).slice(0, 10);
-
-    // 2. Render Initial Boxes
-    dataArr.forEach((item, index) => {
+    items.forEach(item => {
         const box = document.createElement('div');
         box.className = 'sort-box';
-        // Assign a random unique ID to help tracking
-        box.id = `box-${index}`;
-        
+        box.id = `box-${item.id}`;
         box.innerHTML = `
-            <div class="score-circle">${item.val}</div>
-            <div class="label">${item.name}</div>
+            <div class="score-circle" style="background: ${item.color}">
+                ${item.score}
+            </div>
+            <div class="label">${item.genre}</div>
         `;
         container.appendChild(box);
     });
-
-    statusDiv.innerHTML = "Initializing Quick Sort (Descending)...";
-    await sleep(1000);
-
-    // 3. Start Recursive Quick Sort
-    await quickSort(container, 0, dataArr.length - 1, statusDiv);
-
-    if (isSorting) {
-        statusDiv.innerHTML = "<span style='color:#1ed760'>Sort Complete!</span> Genres ordered by Relevance.";
-        Array.from(container.children).forEach(child => child.classList.add('sorted'));
-    }
 }
 
-// Recursive Quick Sort
-async function quickSort(container, low, high, statusDiv) {
-    if (!isSorting) return;
-
-    if (low < high) {
-        let pi = await partition(container, low, high, statusDiv);
-        await quickSort(container, low, pi - 1, statusDiv);
-        await quickSort(container, pi + 1, high, statusDiv);
-    } else if (low === high) {
-        if(container.children[low]) container.children[low].classList.add('sorted');
-    }
-}
-
-// Partition Function
-async function partition(container, low, high, statusDiv) {
-    if (!isSorting) return;
-
-    let boxes = container.children;
+async function visualizeQuickSort(items, container) {
+    if (isSorting) return;
+    isSorting = true;
     
-    // Select Pivot (Last element)
-    let pivotBox = boxes[high];
-    let pivotVal = parseInt(pivotBox.querySelector('.score-circle').innerText);
-    let pivotName = pivotBox.querySelector('.label').innerText;
-
-    pivotBox.classList.add('pivot');
-    statusDiv.innerHTML = `Pivot selected: <span style="color:#f1c40f">${pivotName}</span>`;
-    await sleep(800);
-
-    let i = (low - 1); 
-
-    for (let j = low; j <= high - 1; j++) {
-        if (!isSorting) return;
-
-        let currentBox = boxes[j];
-        let currentVal = parseInt(currentBox.querySelector('.score-circle').innerText);
-        let currentName = currentBox.querySelector('.label').innerText;
-
-        currentBox.classList.add('comparing');
-        statusDiv.innerHTML = `Comparing <span style="color:#ff4757">${currentName}</span> vs Pivot`;
-        await sleep(600);
-
-        // Sorting DESCENDING (> for Descending)
-        if (currentVal > pivotVal) {
-            i++;
-            if (i !== j) {
-                statusDiv.innerHTML = `Swapping <span style="color:#00bcd4">${currentName}</span> to left`;
-                await swapDomNodes(boxes[i], boxes[j]);
-                boxes = container.children; // refresh ref
+    const status = document.getElementById('sort-status');
+    status.textContent = "Starting Quick Sort...";
+    
+    // Helper function for delays with speed control
+    const delay = (ms) => {
+        // Apply speed factor - lower factor = faster, higher factor = slower
+        // We invert the logic: speedFactor > 1 = slower, < 1 = faster
+        const adjustedMs = ms / speedFactor;
+        return new Promise(resolve => setTimeout(resolve, adjustedMs));
+    };
+    
+    // Clear any existing classes
+    const clearAllStates = () => {
+        container.querySelectorAll('.sort-box').forEach(box => {
+            box.classList.remove('comparing', 'swapping', 'sorted', 'pivot');
+        });
+    };
+    
+    // Update status with delay
+    const updateStatus = async (text) => {
+        status.textContent = text;
+        await delay(500);
+    };
+    
+    // Highlight boxes being compared
+    const highlightComparing = async (idx1, idx2) => {
+        clearAllStates();
+        document.getElementById(`box-${items[idx1].id}`).classList.add('comparing');
+        document.getElementById(`box-${items[idx2].id}`).classList.add('comparing');
+        await delay(800);
+    };
+    
+    // Highlight pivot
+    const highlightPivot = async (idx) => {
+        document.getElementById(`box-${items[idx].id}`).classList.add('pivot');
+        await delay(600);
+    };
+    
+    // Show swapping animation
+    const animateSwap = async (idx1, idx2) => {
+        const box1 = document.getElementById(`box-${items[idx1].id}`);
+        const box2 = document.getElementById(`box-${items[idx2].id}`);
+        
+        box1.classList.add('swapping');
+        box2.classList.add('swapping');
+        
+        await delay(600);
+        
+        // Swap positions in DOM
+        const parent = box1.parentNode;
+        const temp = document.createElement('div');
+        parent.insertBefore(temp, box1);
+        parent.insertBefore(box1, box2);
+        parent.insertBefore(box2, temp);
+        parent.removeChild(temp);
+        
+        // Swap in array
+        [items[idx1], items[idx2]] = [items[idx2], items[idx1]];
+        
+        await delay(400);
+        
+        box1.classList.remove('swapping');
+        box2.classList.remove('swapping');
+    };
+    
+    // Mark as sorted
+    const markSorted = async (idx) => {
+        const box = document.getElementById(`box-${items[idx].id}`);
+        box.classList.add('sorted');
+        await delay(300);
+    };
+    
+    // Quick Sort implementation with visualization
+    async function quickSort(arr, low, high) {
+        if (low < high) {
+            await updateStatus(`Partitioning from position ${low} to ${high}`);
+            
+            const pi = await partition(arr, low, high);
+            
+            await updateStatus(`Pivot ${arr[pi].genre} (score: ${arr[pi].score}) is now in correct position`);
+            await markSorted(pi);
+            
+            await updateStatus(`Sorting left side (${low} to ${pi-1})`);
+            await quickSort(arr, low, pi - 1);
+            
+            await updateStatus(`Sorting right side (${pi+1} to ${high})`);
+            await quickSort(arr, pi + 1, high);
+        } else if (low === high) {
+            await markSorted(low);
+        }
+    }
+    
+    async function partition(arr, low, high) {
+        // Choose pivot (last element)
+        const pivot = arr[high];
+        await highlightPivot(high);
+        
+        let i = low - 1;
+        
+        for (let j = low; j < high; j++) {
+            await updateStatus(`Comparing ${arr[j].genre} (${arr[j].score}) with pivot ${pivot.genre} (${pivot.score})`);
+            await highlightComparing(j, high);
+            
+            if (arr[j].score > pivot.score) { // Sort descending (highest scores first)
+                i++;
+                
+                if (i !== j) {
+                    await updateStatus(`Swapping ${arr[i].genre} with ${arr[j].genre}`);
+                    await animateSwap(i, j);
+                }
             }
         }
-        currentBox.classList.remove('comparing');
+        
+        // Place pivot in correct position
+        await updateStatus(`Placing pivot ${pivot.genre} in correct position`);
+        await animateSwap(i + 1, high);
+        
+        return i + 1;
     }
-
-    if (i + 1 !== high) {
-        statusDiv.innerHTML = `Placing Pivot <span style="color:#f1c40f">${pivotName}</span>`;
-        await swapDomNodes(boxes[i + 1], boxes[high]);
+    
+    // Start sorting
+    try {
+        await quickSort(items, 0, items.length - 1);
+        
+        // Mark all as sorted
+        for (let i = 0; i < items.length; i++) {
+            await markSorted(i);
+        }
+        
+        await updateStatus("✅ Sorting Complete! Items sorted by recommendation score (highest to lowest)");
+        
+        // Show final sorted order
+        let finalOrder = "Final order: ";
+        items.forEach((item, idx) => {
+            finalOrder += `${idx+1}. ${item.genre}(${item.score}) `;
+        });
+        console.log(finalOrder);
+        
+    } catch (error) {
+        console.error("Sorting visualization error:", error);
+        status.textContent = "Sorting interrupted";
+    } finally {
+        isSorting = false;
     }
-    
-    boxes = container.children; 
-    boxes[i + 1].classList.remove('pivot');
-    boxes[i + 1].classList.add('sorted');
-    
-    return (i + 1);
 }
 
-// Helper to swap nodes visually
-async function swapDomNodes(nodeA, nodeB) {
-    if (nodeA === nodeB) return;
+// Close modal when clicking outside
+window.addEventListener('click', (event) => {
+    const modal = document.getElementById('sortModal');
+    if (event.target === modal) {
+        closeSortModal();
+    }
+});
 
-    nodeA.classList.add('swapping');
-    nodeB.classList.add('swapping');
+// ---------------------------------
+// 5. INITIALIZE ON LOAD
+// ---------------------------------
+document.addEventListener('DOMContentLoaded', () => {
+    loadRecommendations();
     
-    // Wait based on speed
-    await sleep(600);
-
-    const parent = nodeA.parentNode;
-    const siblingA = nodeA.nextSibling === nodeB ? nodeA : nodeA.nextSibling;
-    parent.insertBefore(nodeA, nodeB);
-    parent.insertBefore(nodeB, siblingA);
-
-    await sleep(200);
-    
-    nodeA.classList.remove('swapping');
-    nodeB.classList.remove('swapping');
-}
-
-// DYNAMIC SLEEP FUNCTION
-function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms / speedFactor));
-}
-
-// Initial load
-loadRecommendations();
+    // Initialize speed control - ONLY ONCE
+    // Initialize speed control - ONLY ONCE
+    const speedRange = document.getElementById('speedRange');
+    if (speedRange) {
+        speedRange.addEventListener('input', (e) => {
+            const val = parseInt(e.target.value);
+            
+            // INVERTED mapping for intuitive slider (left = slow, right = fast)
+            const speedMap = {
+                1: 6.0,   // 6x slower (very slow)
+                2: 4.0,   // 4x slower
+                3: 2.5,   // 2.5x slower
+                4: 1.5,   // 1.5x slower
+                5: 1.0,   // Normal
+                6: 0.6,   // 1.7x faster
+                7: 0.3,   // 3.3x faster
+                8: 0.2,   // 5x faster
+                9: 0.15,  // 6.7x faster
+                10: 0.1   // 10x faster
+            };
+            
+            speedFactor = speedMap[val] || 1.0;
+            
+            // Update visual indicator
+            const speedIndicator = document.querySelector('.speed-label[style*="color: #1ed760"]');
+            if (speedIndicator) {
+                let speedText;
+                if (val <= 2) speedText = 'Very Slow';
+                else if (val <= 4) speedText = 'Slow';
+                else if (val === 5) speedText = 'Normal';
+                else if (val <= 7) speedText = 'Fast';
+                else if (val <= 9) speedText = 'Very Fast';
+                else speedText = 'Ultra Fast';
+                
+                speedIndicator.textContent = speedText;
+                
+                // Update the color based on speed
+                if (val <= 4) {
+                    speedIndicator.style.color = '#ff4757'; // Red for slow
+                } else if (val === 5) {
+                    speedIndicator.style.color = '#1ed760'; // Lime green for normal
+                } else {
+                    speedIndicator.style.color = '#00ff00'; // Green for fast
+                }
+            }
+            
+            console.log(`Speed: slider=${val}, factor=${speedFactor.toFixed(2)}x, ${speedFactor < 1 ? 'FASTER' : 'SLOWER'} than normal`);
+        });
+        
+        // Trigger initial update
+        speedRange.dispatchEvent(new Event('input'));
+    }
+});
 </script>
-
 </body>
 </html>
