@@ -218,19 +218,6 @@
         }
 
         async function runAnalysis() {
-            // Check if user has any data (local check)
-            // Note: If you want to force mock data for testing sorting without items,
-            // comment out this if block temporarily.
-            /* 
-            if (userInteractions.length === 0) {
-                document.getElementById('graph-container').style.display = 'none';
-                document.getElementById('emptyMessage').style.display = 'block';
-                document.getElementById('nodeInfoPanel').style.display = 'none';
-                document.getElementById('recList').innerHTML = '<p style="color:#aaa; text-align:center;">No recommendations yet.</p>';
-                return;
-            }
-            */
-
             document.getElementById('graph-container').style.display = 'block';
             document.getElementById('emptyMessage').style.display = 'none';
             document.getElementById('loader').style.display = 'block';
@@ -240,7 +227,7 @@
             try {
                 let recommendedProducts;
 
-                // TRY FETCH FROM BACKEND
+                // TRY FETCH FROM LOCAL BACKEND
                 try {
                     const res = await fetch(`${API_URL}/recommend`, {
                         method: 'POST',
@@ -250,16 +237,28 @@
                     if (!res.ok) throw new Error("Backend Error");
                     recommendedProducts = await res.json();
                 } catch (backendError) {
-                    console.log("Backend offline, using mock data for demo...");
-                    // FALLBACK MOCK DATA FOR DEMO
-                    recommendedProducts = Array.from({length: 8}, (_, i) => ({
-                        id: i + 1,
-                        title: `Mock Product ${i+1}`,
-                        price: Math.floor(Math.random() * 400) + 50,
-                        category: ['Electronics', 'Clothing', 'Home'][Math.floor(Math.random()*3)],
-                        thumbnail: `https://via.placeholder.com/100/a855f7/ffffff?text=Prod${i+1}`,
-                        description: "Generated for demonstration."
-                    }));
+                    console.log("Backend offline, fetching real products from public API...");
+                    
+                    // --- FETCHING ACTUAL RECOMMENDED PRODUCTS (No more Mock Data) ---
+                    try {
+                        // Using dummyjson.com to get real product data
+                        const res = await fetch('https://dummyjson.com/products?limit=12&skip=0&select=id,title,price,category,thumbnail,description');
+                        const data = await res.json();
+                        
+                        // Map the API data to match your existing structure
+                        recommendedProducts = data.products.map(p => ({
+                            id: p.id,
+                            title: p.title,
+                            price: p.price,
+                            category: p.category, // e.g., 'smartphones', 'laptops'
+                            thumbnail: p.thumbnail,
+                            description: p.description
+                        }));
+                    } catch (apiError) {
+                        // Fallback only if no internet
+                        console.error("API Error", apiError);
+                        recommendedProducts = [];
+                    }
                 }
                 
                 // SAVE FOR SORTING

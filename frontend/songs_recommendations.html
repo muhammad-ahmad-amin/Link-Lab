@@ -662,7 +662,6 @@
 </div>
 
 <!-- SORTING VISUALIZATION MODAL -->
-<!-- SORTING VISUALIZATION MODAL -->
 <div id="sortModal" class="modal">
   <div class="modal-content">
     <div class="modal-header">
@@ -1383,13 +1382,6 @@ function displayGenreList(orderedGenres, scores) {
 }
 
 // ---------------------------------
-// 4. SORTING VISUALIZATION LOGIC (BOXES)
-// ---------------------------------
-// ---------------------------------
-// 4. SORTING VISUALIZATION LOGIC (QUICK SORT)
-// ---------------------------------
-
-// ---------------------------------
 // 4. SORTING VISUALIZATION LOGIC (QUICK SORT + SPEED CONTROL)
 // ---------------------------------
 
@@ -1398,11 +1390,8 @@ let speedFactor = 1.0; // Multiplier for animation speed
 
 // Listen for slider changes
 document.getElementById('speedRange').addEventListener('input', (e) => {
-    // Map slider 1-10 to a speed factor
-    // 1 = 0.25x speed (Very Slow)
-    // 4 = 1.0x speed (Normal)
-    // 10 = 4.0x speed (Very Fast)
     const val = parseInt(e.target.value);
+    // Map slider 1-10: 1 = Slow (0.25x), 4 = Normal (1x), 10 = Fast (4x)
     if(val < 4) {
         speedFactor = 0.25 * val; 
     } else {
@@ -1411,9 +1400,11 @@ document.getElementById('speedRange').addEventListener('input', (e) => {
 });
 
 document.getElementById('sort-viz-btn').addEventListener('click', () => {
+    // If no data is loaded yet, use mock data to demonstrate the visual
     if(!globalData || !globalData.recommendationScores) {
-        alert("Wait for recommendations to load first!");
-        return;
+        globalData = {
+           recommendationScores: { "Pop": 95, "Rock": 82, "Jazz": 60, "Hip Hop": 88, "Classical": 45, "Indie": 75, "Metal": 55, "Blues": 65 }
+        };
     }
     document.getElementById('sortModal').style.display = 'block';
     startSortingVisualization();
@@ -1441,6 +1432,7 @@ async function startSortingVisualization() {
     dataArr.forEach((item, index) => {
         const box = document.createElement('div');
         box.className = 'sort-box';
+        // Assign a random unique ID to help tracking
         box.id = `box-${index}`;
         
         box.innerHTML = `
@@ -1503,7 +1495,7 @@ async function partition(container, low, high, statusDiv) {
         statusDiv.innerHTML = `Comparing <span style="color:#ff4757">${currentName}</span> vs Pivot`;
         await sleep(600);
 
-        // Sorting DESCENDING (> for Descending, < for Ascending)
+        // Sorting DESCENDING (> for Descending)
         if (currentVal > pivotVal) {
             i++;
             if (i !== j) {
@@ -1550,9 +1542,6 @@ async function swapDomNodes(nodeA, nodeB) {
 
 // DYNAMIC SLEEP FUNCTION
 function sleep(ms) {
-    // Divides the delay by the speedFactor.
-    // If factor is 2 (Fast), delay is halved.
-    // If factor is 0.5 (Slow), delay is doubled.
     return new Promise(resolve => setTimeout(resolve, ms / speedFactor));
 }
 
